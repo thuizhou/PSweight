@@ -1,17 +1,8 @@
 #SumStat_f() for not using user-supplied weights
 
-##INPUT
-# ps.formula: the propensity model
-# data: the input dataframe(can have factor column)
-# weight: vector of weighting methods of interest (can be "ATE","ATO","ATT")
-# trtgrp: specify the reference group(only valid in ATT)
-# delta: trim the data according to propensity
-
-##OUTPUT
-# object SumStat
 
 #############################################################################################
-SumStat_f<- function(ps.formula,ps.estimate=NULL,trtgrp=NULL,data,weight=c("ATO"),delta=0){
+SumStat_f<- function(ps.formula,ps.estimate=NULL,trtgrp=NULL,data,weight=c("overlap"),delta=0){
   #extract z name
   if(typeof(ps.formula)!="character"){
     ps.formula=Reduce(paste0,deparse(ps.formula))
@@ -57,7 +48,7 @@ SumStat_f<- function(ps.formula,ps.estimate=NULL,trtgrp=NULL,data,weight=c("ATO"
 
   #use weight_gen() to obtain weights according to user's specification
   weight_gen<-function(AT){
-    if(AT =='ATO'){
+    if(AT =='overlap'){
       tilt.h<-(1/apply(1/e.h,1,sum))
       allwt<-(1/e.h)*tilt.h
       wt<-rep(0,n)
@@ -67,7 +58,7 @@ SumStat_f<- function(ps.formula,ps.estimate=NULL,trtgrp=NULL,data,weight=c("ATO"
         wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
     }
 
-    else if (AT == 'ATE'){
+    else if (AT == 'IPW'){
       tilt.h<-rep(1,n)
       allwt<-1/e.h
       wt<-rep(0,n)
@@ -77,7 +68,28 @@ SumStat_f<- function(ps.formula,ps.estimate=NULL,trtgrp=NULL,data,weight=c("ATO"
         wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
     }
 
-    else if (AT == 'ATT'){
+    else if (AT == 'matching'){
+      tilt.h<-apply(e.h, 1, min)
+      allwt<-tilt.h/e.h
+      wt<-rep(0,n)
+      wt1<-rep(0,n)
+      for(i in 1:ncate){
+        wt[z==i]<-allwt[z==i,i]
+        wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
+    }
+
+    else if (AT == 'entropy'){
+      e.hclip<- pmax(e.h,1e-6)
+      tilt.h<-(-apply(e.hclip*log(e.hclip) ,1,sum))
+      allwt<-tilt.h/e.hclip
+      wt<-rep(0,n)
+      wt1<-rep(0,n)
+      for(i in 1:ncate){
+        wt[z==i]<-allwt[z==i,i]
+        wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
+    }
+
+    else if (AT == 'treated'){
       if (is.null(trtgrp)){
         tilt.h<-e.h[,ncate]
         allwt<-tilt.h/e.h

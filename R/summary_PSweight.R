@@ -62,6 +62,7 @@
 #' Li, F., Li, F. (2019). Propensity score weighting for causal inference with multiple treatments.
 #' The Annals of Applied Statistics, 13(4), 2389-2415.
 #'
+#'
 #' @export
 #'
 #' @examples

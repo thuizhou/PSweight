@@ -1,21 +1,9 @@
 #SumStat_p() for using user-supplied weights
 
-##INPUT
-# ps.estimate: user supplied ps estimates
-# data: the input dataframe(can have factor column)
-# weight: vector of weighting methods of interest (can be "ATE","ATO","ATT")
-# trtgrp: specify the reference group(only valid in ATT)
-# delta: trim the data according to propensity
-# Z: trt vector
-# covM: covariance matrix
-# zname: trt vector name if data is specified
-# xname: predictor names
 
-##OUTPUT
-# object SumStat
 
 #############################################################################################
-SumStat_p<- function(ps.estimate=NULL,trtgrp=NULL,zname=NULL,xname=NULL,Z=NULL,covM=NULL,data=NULL,weight=c("ATO"),delta=0){
+SumStat_p<- function(ps.estimate=NULL,trtgrp=NULL,zname=NULL,xname=NULL,Z=NULL,covM=NULL,data=NULL,weight=c("overlap"),delta=0){
 
   #print message if more than nesscary info supplied
   if ((!is.null(Z))&&(!is.null(zname))==T) warning("both Z and zname supplied, zname ignored")
@@ -172,7 +160,7 @@ SumStat_p<- function(ps.estimate=NULL,trtgrp=NULL,zname=NULL,xname=NULL,Z=NULL,c
 
   #use weight_gen() to obtain weights according to user's specification
   weight_gen<-function(AT){
-  if(AT =='ATO'){
+  if(AT =='overlap'){
     tilt.h<-(1/apply(1/e.h,1,sum))
     allwt<-(1/e.h)*tilt.h
     wt<-rep(0,n)
@@ -181,7 +169,7 @@ SumStat_p<- function(ps.estimate=NULL,trtgrp=NULL,zname=NULL,xname=NULL,Z=NULL,c
       wt[z==i]<-allwt[z==i,i]
       wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
   }
-  else if (AT == 'ATE'){
+  else if (AT == 'IPW'){
     tilt.h<-rep(1,n)
     allwt<-1/e.h
     wt<-rep(0,n)
@@ -190,7 +178,27 @@ SumStat_p<- function(ps.estimate=NULL,trtgrp=NULL,zname=NULL,xname=NULL,Z=NULL,c
       wt[z==i]<-allwt[z==i,i]
       wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
   }
-  else if (AT == "ATT"){
+    else if (AT == 'matching'){
+      tilt.h<-apply(e.h, 1, min)
+      allwt<-tilt.h/e.h
+      wt<-rep(0,n)
+      wt1<-rep(0,n)
+      for(i in 1:ncate){
+        wt[z==i]<-allwt[z==i,i]
+        wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
+    }
+
+    else if (AT == 'entropy'){
+      e.hclip<- pmax(e.h,1e-6)
+      tilt.h<-(-apply(e.hclip*log(e.hclip) ,1,sum))
+      allwt<-tilt.h/e.hclip
+      wt<-rep(0,n)
+      wt1<-rep(0,n)
+      for(i in 1:ncate){
+        wt[z==i]<-allwt[z==i,i]
+        wt1[z==i]<-allwt[z==i,i]/sum(allwt[z==i,i])}
+    }
+  else if (AT == "treated"){
     if (is.null(trtgrp))
     {
       tilt.h<-e.h[,ncate]
@@ -285,7 +293,6 @@ SumStat_p<- function(ps.estimate=NULL,trtgrp=NULL,zname=NULL,xname=NULL,Z=NULL,c
   colnames(eff.sample.size)<-c("unweighted",weight)
   rownames(eff.sample.size)<-dic
   eff.sample.size[,1]<-as.numeric(table(data$zindex))
-
 
   uw<-weight_gen(AT="none")
   unweighted<-wstat(covM,z=data$zindex,w=uw[,2],h=uw[,3])

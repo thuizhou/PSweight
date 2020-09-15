@@ -10,6 +10,7 @@
   weighted.var = TRUE,
   threshold = 0.1,
   metric = "ASD",
+  breaks = 50,
   ...
 )
 }
@@ -24,13 +25,15 @@
 
 \item{metric}{a character indicating the type of metric used in balance plot. Only \code{"ASD"} or \code{"PSD"} is allowed. If not specified, the default is \code{"ASD"}. See  \code{\link{summary.SumStat}} for additional details on balance metrics.}
 
+\item{breaks}{a single number giving the number of cells for the histogram. Default is 50.}
+
 \item{...}{further arguments passed to or from other methods.}
 }
 \value{
 Plot of the indicated type.
 }
 \description{
-Summarize the SumStat x, generate histogram or density of estimated propensity scores and
+Summarize the SumStat object, generate histogram or density of estimated propensity scores and
 plot the balance statistics under weighting versus no weighting.
 }
 \details{
@@ -42,8 +45,8 @@ whether \code{type = "density"} or \code{type = "hist"}.
 \examples{
 data("psdata")
 ps.formula<-trt~cov1+cov2+cov3+cov4+cov5+cov6
-msstat <- SumStat(ps.formula, trtgrp="2", data=psdata,
-   weight=c("ATE","ATO","ATT"))
+msstat <- SumStat(ps.formula, trtgrp="2", data=subset(psdata,trt>1),
+   weight=c("IPW","overlap","treated","entropy","matching"))
 
 plot(msstat, type="hist")
 plot(msstat, type="balance", weighted.var=TRUE, threshold=0.1, metric="ASD")

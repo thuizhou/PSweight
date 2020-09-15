@@ -19,7 +19,7 @@ print.SumStat<-function(x,...) {
     cat("\n")
   }
   weights<-names(x$ps.weights)[-(1:2)]
-  if ("ATT" %in% weights){
+  if ("treated" %in% weights){
     cat(paste('trt group for PS model is: ',x$trtgrp), "\n")
   }
   cat(paste('weights estimated for: ',paste(weights,collapse=" ")), "\n")

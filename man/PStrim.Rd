@@ -4,18 +4,27 @@
 \alias{PStrim}
 \title{Trim the input data and propensity estimate}
 \usage{
-PStrim(data, ps.formula = NULL, zname = NULL, ps.estimate = NULL, delta = 0)
+PStrim(
+  data,
+  ps.formula = NULL,
+  zname = NULL,
+  ps.estimate = NULL,
+  delta = 0,
+  optimal = FALSE
+)
 }
 \arguments{
 \item{data}{an optional data frame containing the variables required by \code{ps.formula}.}
 
-\item{ps.formula}{an object of class \code{\link{formula}} (or one that can be coerced to that class): a symbolic description of the propensity score model to be fitted. Additional details of model specification are given under ‘Details’. This argument is optional if \code{ps.estimate} is not \code{NULL}.}
+\item{ps.formula}{an object of class \code{\link{formula}} (or one that can be coerced to that class): a symbolic description of the propensity score model to be fitted. Additional details of model specification are given under "Details". This argument is optional if \code{ps.estimate} is not \code{NULL}.}
 
-\item{zname}{an optional character specifying the name of the treatment variable in \code{data}.}
+\item{zname}{an optional character specifying the name of the treatment variable in \code{data}. Unless \code{ps.formula} is specified, \code{zname} is required.}
 
 \item{ps.estimate}{an optional matrix or data frame containing estimated (generalized) propensity scores for each observation. Typically, this is an N by J matrix, where N is the number of observations and J is the total number of treatment levels. Preferably, the column name of this matrix should match the name of treatment level, if column name is missing or there is a mismatch, the column names would be assigned according to alphabatic order of the treatment levels. A vector of propensity score estimates is also allowed in \code{ps.estimate}, in which case a binary treatment is implied and the input is regarded as the propensity to receive the last category of treatment by alphabatic order, unless otherwise stated by \code{trtgrp}.}
 
 \item{delta}{trimming threshold for estimated (generalized) propensity scores. Should be no larger than 1 / number of treatment groups. Default is 0, corresponding to no trimming.}
+
+\item{optimal}{an logical argument indicating if optimal trimming should be used. Default is \code{FALSE}.}
 }
 \value{
 PStrim returns a list of the following values:
@@ -25,7 +34,11 @@ PStrim returns a list of the following values:
 
 \item{\code{ trim_sum}}{a table summrizing the number of cases by treatment groups before and after trimming. }
 
-\item{\code{ ps.estimate}}{ an optional dataframe of propensity estimate after trimming if propensity estimate is imported. }
+\item{\code{ ps.estimate}}{ a data frame of propensity estimate after trimming. }
+
+\item{\code{ delta}}{ an optional output of trimming threshold for symmetric trimming. }
+
+\item{\code{ lambda}}{ an optional output trimming threshold for optimal trimming with multiple treatment groups. }
 }
 }
 \description{
@@ -44,12 +57,14 @@ the treatment group corresponds to the last group in the alphebatic order, unles
 When comparing multiple (J>=3) treatments, \code{ps.estimate} needs to be specified as an N by J matrix,
 where N indicates the number of observations, and J indicates the total number of treatments.
 This matrix specifies the estimated generalized propensity scores to receive each of the J treatments.
-In general, \code{ps.estimate} should have column names that indicate the level of the treatment variable,
-which should match the levels given in \code{Z}.
-If column names are empty or there is a mismatch, the column names will be created following
-the alphebatic order of values in \code{Z}, and the rightmost coulmn of \code{ps.estimate} is assumed
-to be the treatment group, when estimating ATT. \code{trtgrp} can also be used to specify the treatment
-group for estimating ATT.
+
+With binary treatments, \code{delta} defines the symmetric propensity score trimming rule following Crump et al. (2009).
+With multiple treatments, \code{delta} defines the symmetric multinomial trimming rule introduced in Yoshida et al. (2019).
+With binary treatments and when \code{optimal} equals \code{TRUE}, the trimming function implements the optimal
+symmetric trimming rule in Crump et al. (2009). The optimal trimming threshold \code{delta} is then returned.
+With multiple treatments and \code{optimal} equals \code{TRUE}, the trimming function implements the optimal trimming rule in Yang et al. (2016).
+The optimal cutoff \code{lambda}, which defines the acceptable upper bound for the sum of inverse generalized propensity scores, is
+returned. See Yang et al. (2016) and Li and Li (2019) for details.
 
 The argument \code{zname} is required when \code{ps.estimate} is not \code{NULL}.
 }
@@ -61,5 +76,21 @@ ps.formula<-trt~cov1+cov2+cov3+cov4+cov5+cov6
 
 # trim the original data by setting the threshold of propensity as 0.05
 PStrim(data=psdata, ps.formula=ps.formula, delta=0.05)
+PStrim(data=psdata, ps.formula=ps.formula, optimal=TRUE)
 
+}
+\references{
+Crump, R. K., Hotz, V. J., Imbens, G. W., Mitnik, O. A. (2009).
+Dealing with limited overlap in estimation of average treatment effects. Biometrika, 96(1), 187-199.
+
+Yoshida, K., Solomon, D.H., Haneuse, S., Kim, S.C., Patorno, E., Tedeschi, S.K., Lyu, H.,
+Franklin, J.M., Stürmer, T., Hernández-Díaz, S. and Glynn, R.J. (2019).
+Multinomial extension of propensity score trimming methods: A simulation study.
+American Journal of Epidemiology, 188(3), 609-616.
+
+Yang, S., Imbens, G. W., Cui, Z., Faries, D. E., Kadziola, Z. (2016). Propensity score matching
+and subclassification in observational studies with multi-level treatments. Biometrics, 72(4), 1055-1065.
+
+Li, F., Li, F. (2019). Propensity score weighting for causal inference with multiple treatments.
+The Annals of Applied Statistics, 13(4), 2389-2415.
 }

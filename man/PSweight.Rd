@@ -2,7 +2,7 @@
 % Please edit documentation in R/PSweight.R
 \name{PSweight}
 \alias{PSweight}
-\title{Estimate causal effects by propensity score weighting}
+\title{Estimate average causal effects by propensity score weighting}
 \usage{
 PSweight(
   ps.formula = NULL,
@@ -11,7 +11,7 @@ PSweight(
   zname = NULL,
   yname,
   data,
-  weight = "ATO",
+  weight = "overlap",
   delta = 0,
   augmentation = FALSE,
   bootstrap = FALSE,
@@ -24,7 +24,7 @@ PSweight(
 \arguments{
 \item{ps.formula}{an object of class \code{\link{formula}} (or one that can be coerced to that class):
 a symbolic description of the propensity score model to be fitted. Additional details of model specification
-are given under ‘Details’. This argument is optional if \code{ps.estimate} is not \code{NULL}.}
+are given under "Details". This argument is optional if \code{ps.estimate} is not \code{NULL}.}
 
 \item{ps.estimate}{an optional matrix or data frame containing estimated (generalized) propensity scores for
 each observation. Typically, this is an N by J matrix, where N is the number of observations and J is the
@@ -35,7 +35,7 @@ case a binary treatment is implied and the input is regarded as the propensity t
 treatment by alphabatic order, unless otherwise stated by \code{trtgrp}.}
 
 \item{trtgrp}{an optional character defining the "treated" population for estimating the average treatment
-effect among the treated (ATT). Only necessary if \code{weight = "ATT"}. This option can also be used to specify
+effect among the treated (ATT). Only necessary if \code{weight = "treated"}. This option can also be used to specify
 the treatment (in a two-treatment setting) when a vector argument is supplied for \code{ps.estimate}.
 Default value is the last group in the alphebatic order.}
 
@@ -48,11 +48,13 @@ and outcome model (if augmented estimator is used). If not found in data, the va
 taken from \code{environment(formula)}.}
 
 \item{weight}{a character or vector of characters including the types of weights to be used.
-\code{"ATE"} specifies the inverse probability weights for estimating the average treatment
-effect among the combined population. \code{"ATT"} specifies the weights for estimating the
-average treatment effect among the treated. \code{"ATO"} specifies the (generalized) overlap weights
+\code{"IPW"} specifies the inverse probability of treatment weights for estimating the average treatment
+effect among the combined population. \code{"treated"} specifies the weights for estimating the
+average treatment effect among the treated. \code{"overlap"} specifies the (generalized) overlap weights
 for estimating the average treatment effect among the overlap population, or population at
-clinical equipoise. Default is \code{"ATO"}.}
+clinical equipoise. \code{"matching"} specifies the matching weights for estimating the average treatment effect
+among the matched population (ATM). \code{"entropy"} specifies the entropy weights for the average treatment effect
+of entropy weighted population (ATEN). Default is \code{"overlap"}.}
 
 \item{delta}{trimming threshold for estimated (generalized) propensity scores.
 Should be no larger than 1 / number of treatment groups. Default is 0, corresponding to no trimming.}
@@ -67,7 +69,7 @@ of the point estimates. Default is \code{FALSE}.}
 
 \item{out.formula}{an object of class \code{\link{formula}} (or one that can be coerced to that class):
 a symbolic description of the outcome model to be fitted. Additional details of model specification
-are given under ‘Details’. This argument is optional if \code{out.estimate} is not \code{NULL}.}
+are given under "Details". This argument is optional if \code{out.estimate} is not \code{NULL}.}
 
 \item{out.estimate}{an optional matrix or data frame containing estimated potential outcomes
 for each observation. Typically, this is an N by J matrix, where N is the number of observations
@@ -106,11 +108,12 @@ A summary of PSweight can be obtained with \code{\link{summary.PSweight}}.
 \description{
 The function \code{PSweight} is used to estimate the average potential outcomes corresponding to
 each treatment group among the target population. The function currently implements
-three types of weights: the inverse probability weights (target population is the combined population),
-ATT weights (target population is the population receiving one treatment) and overlap weights (target
-population is the overlap population at clinical equipoise). Augmented propensity score weighting estimators
-are also allowed, with propensity scores and outcome estimates either estimated within the function, or
-estimated by external routines.
+the following types of weights: the inverse probability of treatment weights (IPW: target population is the combined population),
+average treatment effect among the treated weights (treated: target population is the population receiving a specified treatment),
+overlap weights (overlap: target population is the overlap population at clinical equipoise), matching weights (matching: target population
+is population obtained under 1:1 matching), entropy weights (entropy: target population is the population weighted by the entropy function).
+Augmented propensity score weighting estimators are also allowed, with propensity scores and outcome model estimates either estimated
+within the function, or supplied by external routines.
 }
 \details{
 A typical form for \code{ps.formula} is \code{treatment ~ terms} where \code{treatment} is the treatment
@@ -140,8 +143,9 @@ for each observation.
 The argument \code{zname} and/or \code{yname} is required when \code{ps.estimate}
 and/or \code{out.estimate} is not \code{NULL}.
 
-Current version of \code{PSweight} allows for three types of propensity score weights used to estimate ATE, ATT and
-ATO. These weights are members of larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (IPW), ATT (treated) and
+ATO (overlap), ATM (matching) and ATEN (entropy). These weights are members of larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+Specific definitions of these weights are provided in Li, Morgan, and Zaslavsky (2018), Li and Greene (2013), Zhou, Matsouaka and Thomas (2020).
 When there is a practical violation of the positivity assumption, \code{delta} defines the symmetric
 propensity score trimming rule following Crump et al. (2009). With multiple treatments, \code{delta} defines the
 multinomial trimming rule introduced in Yoshida et al. (2019). The overlap weights can also be considered as
@@ -165,18 +169,21 @@ ps.formula<-trt~cov1+cov2+cov3+cov4+cov5+cov6
 out.formula<-Y~cov1+cov2+cov3+cov4+cov5+cov6
 
 # without augmentation
-ato1<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,weight = 'ATO')
+ato1<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,weight = 'overlap')
 summary(ato1)
 
 # augmented weighting estimator
 ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
-               augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'ATO')
+               augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
 summary(ato2)
 
 }
 \references{
 Crump, R. K., Hotz, V. J., Imbens, G. W., Mitnik, O. A. (2009).
 Dealing with limited overlap in estimation of average treatment effects. Biometrika, 96(1), 187-199.
+
+Li, L., Greene, T. (2013).
+A weighting analogue to pair matching in propensity score analysis. The International Journal of Biostatistics, 9(2), 215-234.
 
 Li, F., Morgan, K. L., Zaslavsky, A. M. (2018).
 Balancing covariates via propensity score weighting.
@@ -193,6 +200,10 @@ Franklin, J.M., Stürmer, T., Hernández-Díaz, S. and Glynn, R.J. (2019).
 Multinomial extension of propensity score trimming methods: A simulation study.
 American Journal of Epidemiology, 188(3), 609-616.
 
+
 Li, F., Li, F. (2019). Propensity score weighting for causal inference with multiple treatments.
 The Annals of Applied Statistics, 13(4), 2389-2415.
+
+Zhou, Y., Matsouaka, R. A., Thomas, L. (2020).
+Propensity score weighting under limited overlap and model misspecification. Statistical Methods in Medical Research (Online)
 }

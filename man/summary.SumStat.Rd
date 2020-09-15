@@ -25,15 +25,20 @@ characterize the variance inflation or precision loss due to weighting, see Li a
 
 \item{\code{ unweighted}}{A table summarizing mean, variance by treatment groups, and standardized mean difference.}
 
-\item{\code{ ATE}}{If \code{"ATE"} is specified, this is a data table summarizing mean, variance by treatment groups,
-and standardized mean difference under inverse probability weighting.}
+\item{\code{ IPW}}{If \code{"IPW"} is specified, this is a data table summarizing mean, variance by treatment groups,
+and standardized mean difference under inverse probability of treatment weighting.}
 
-\item{\code{ ATT}}{If \code{"ATT"} is specified, this is a data table summarizing mean, variance by treatment groups,
+\item{\code{ treated}}{If \code{"treated"} is specified, this is a data table summarizing mean, variance by treatment groups,
 and standardized mean difference under the ATT weights.}
 
-\item{\code{ ATO}}{If \code{"ATO"} is specified, this is a data table summarizing mean, variance by treatment groups,
+\item{\code{ overlap}}{If \code{"overlap"} is specified, this is a data table summarizing mean, variance by treatment groups,
 and standardized mean difference under the (generalized) overlap weights.}
 
+\item{\code{ matching}}{If \code{"matching"} is specified, this is a data table summarizing mean, variance by treatment groups,
+and standardized mean difference under the (generalized) matching weights.}
+
+\item{\code{ entropy}}{If \code{"entropy"} is specified, this is a data table summarizing mean, variance by treatment groups,
+and standardized mean difference under the (generalized) entropy weights.}
 }
 }
 \description{
@@ -52,13 +57,19 @@ and maximum of PSD (across all treatments) are calcualted, as explained in Li an
 ## For examples, run: example(SumStat).
 }
 \references{
-McCaffrey, D. F., Griffin, B. A., Almirall, D., Slaughter, M. E., Ramchand, R. and Burgette, L. F. (2013).
-A tutorial on propensity score estimation for multiple treatments using generalized boosted models.
-Statistics in Medicine, 32(19), 3388-3414.
+Crump, R. K., Hotz, V. J., Imbens, G. W., Mitnik, O. A. (2009).
+Dealing with limited overlap in estimation of average treatment effects. Biometrika, 96(1), 187-199.
+
+Li, L., Greene, T. (2013).
+A weighting analogue to pair matching in propensity score analysis. The International Journal of Biostatistics, 9(2), 215-234.
 
 Austin, P.C. and Stuart, E.A. (2015). Moving towards best practice when using inverse probability of treatment weighting (IPTW) using the propensity score to estimate causal treatment effects in observational studies.
 Statistics in Medicine, 34(28), 3661-3679.
 
+
 Li, F., Li, F. (2019). Propensity score weighting for causal inference with multiple treatments.
 The Annals of Applied Statistics, 13(4), 2389-2415.
+
+Zhou, Y., Matsouaka, R. A., Thomas, L. (2020).
+Propensity score weighting under limited overlap and model misspecification. Statistical Methods in Medical Research (Online)
 }

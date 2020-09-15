@@ -1,16 +1,17 @@
-#' Estimate causal effects by propensity score weighting
+#' Estimate average causal effects by propensity score weighting
 #'
 #' The function \code{PSweight} is used to estimate the average potential outcomes corresponding to
 #' each treatment group among the target population. The function currently implements
-#' three types of weights: the inverse probability weights (target population is the combined population),
-#' ATT weights (target population is the population receiving one treatment) and overlap weights (target
-#' population is the overlap population at clinical equipoise). Augmented propensity score weighting estimators
-#' are also allowed, with propensity scores and outcome estimates either estimated within the function, or
-#' estimated by external routines.
+#' the following types of weights: the inverse probability of treatment weights (IPW: target population is the combined population),
+#' average treatment effect among the treated weights (treated: target population is the population receiving a specified treatment),
+#' overlap weights (overlap: target population is the overlap population at clinical equipoise), matching weights (matching: target population
+#' is population obtained under 1:1 matching), entropy weights (entropy: target population is the population weighted by the entropy function).
+#' Augmented propensity score weighting estimators are also allowed, with propensity scores and outcome model estimates either estimated
+#' within the function, or supplied by external routines.
 #'
 #' @param ps.formula an object of class \code{\link{formula}} (or one that can be coerced to that class):
 #' a symbolic description of the propensity score model to be fitted. Additional details of model specification
-#' are given under ‘Details’. This argument is optional if \code{ps.estimate} is not \code{NULL}.
+#' are given under "Details". This argument is optional if \code{ps.estimate} is not \code{NULL}.
 #' @param ps.estimate an optional matrix or data frame containing estimated (generalized) propensity scores for
 #' each observation. Typically, this is an N by J matrix, where N is the number of observations and J is the
 #' total number of treatment levels. Preferably, the column name of this matrix should match the name of treatment level,
@@ -19,7 +20,7 @@
 #' case a binary treatment is implied and the input is regarded as the propensity to receive the last category of
 #' treatment by alphabatic order, unless otherwise stated by \code{trtgrp}.
 #' @param trtgrp an optional character defining the "treated" population for estimating the average treatment
-#' effect among the treated (ATT). Only necessary if \code{weight = "ATT"}. This option can also be used to specify
+#' effect among the treated (ATT). Only necessary if \code{weight = "treated"}. This option can also be used to specify
 #' the treatment (in a two-treatment setting) when a vector argument is supplied for \code{ps.estimate}.
 #' Default value is the last group in the alphebatic order.
 #' @param zname an optional character specifying the name of the treatment variable in \code{data}.
@@ -28,11 +29,13 @@
 #' and outcome model (if augmented estimator is used). If not found in data, the variables are
 #' taken from \code{environment(formula)}.
 #' @param weight a character or vector of characters including the types of weights to be used.
-#' \code{"ATE"} specifies the inverse probability weights for estimating the average treatment
-#' effect among the combined population. \code{"ATT"} specifies the weights for estimating the
-#' average treatment effect among the treated. \code{"ATO"} specifies the (generalized) overlap weights
+#' \code{"IPW"} specifies the inverse probability of treatment weights for estimating the average treatment
+#' effect among the combined population. \code{"treated"} specifies the weights for estimating the
+#' average treatment effect among the treated. \code{"overlap"} specifies the (generalized) overlap weights
 #' for estimating the average treatment effect among the overlap population, or population at
-#' clinical equipoise. Default is \code{"ATO"}.
+#' clinical equipoise. \code{"matching"} specifies the matching weights for estimating the average treatment effect
+#' among the matched population (ATM). \code{"entropy"} specifies the entropy weights for the average treatment effect
+#' of entropy weighted population (ATEN). Default is \code{"overlap"}.
 #' @param delta trimming threshold for estimated (generalized) propensity scores.
 #' Should be no larger than 1 / number of treatment groups. Default is 0, corresponding to no trimming.
 #' @param augmentation logical. Indicate whether augmented weighting estimators should be used.
@@ -42,7 +45,7 @@
 #' @param R an optional integer indicating number of bootstrap replicates. Default is \code{R = 200}.
 #' @param out.formula an object of class \code{\link{formula}} (or one that can be coerced to that class):
 #' a symbolic description of the outcome model to be fitted. Additional details of model specification
-#' are given under ‘Details’. This argument is optional if \code{out.estimate} is not \code{NULL}.
+#' are given under "Details". This argument is optional if \code{out.estimate} is not \code{NULL}.
 #' @param out.estimate an optional matrix or data frame containing estimated potential outcomes
 #' for each observation. Typically, this is an N by J matrix, where N is the number of observations
 #' and J is the total number of treatment levels. Preferably, the column name of this matrix should
@@ -81,8 +84,9 @@
 #' The argument \code{zname} and/or \code{yname} is required when \code{ps.estimate}
 #' and/or \code{out.estimate} is not \code{NULL}.
 #'
-#' Current version of \code{PSweight} allows for three types of propensity score weights used to estimate ATE, ATT and
-#' ATO. These weights are members of larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+#' Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (IPW), ATT (treated) and
+#' ATO (overlap), ATM (matching) and ATEN (entropy). These weights are members of larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+#' Specific definitions of these weights are provided in Li, Morgan, and Zaslavsky (2018), Li and Greene (2013), Zhou, Matsouaka and Thomas (2020).
 #' When there is a practical violation of the positivity assumption, \code{delta} defines the symmetric
 #' propensity score trimming rule following Crump et al. (2009). With multiple treatments, \code{delta} defines the
 #' multinomial trimming rule introduced in Yoshida et al. (2019). The overlap weights can also be considered as
@@ -120,11 +124,12 @@
 #' \item{\code{ group}}{ a table of treatment group labels corresponding to the output point estimates \code{muhat}.}
 #' }
 #'
-
 #' @references
-#'
 #' Crump, R. K., Hotz, V. J., Imbens, G. W., Mitnik, O. A. (2009).
 #' Dealing with limited overlap in estimation of average treatment effects. Biometrika, 96(1), 187-199.
+#'
+#' Li, L., Greene, T. (2013).
+#' A weighting analogue to pair matching in propensity score analysis. The International Journal of Biostatistics, 9(2), 215-234.
 #'
 #' Li, F., Morgan, K. L., Zaslavsky, A. M. (2018).
 #' Balancing covariates via propensity score weighting.
@@ -141,8 +146,14 @@
 #' Multinomial extension of propensity score trimming methods: A simulation study.
 #' American Journal of Epidemiology, 188(3), 609-616.
 #'
+#'
 #' Li, F., Li, F. (2019). Propensity score weighting for causal inference with multiple treatments.
 #' The Annals of Applied Statistics, 13(4), 2389-2415.
+#'
+#' Zhou, Y., Matsouaka, R. A., Thomas, L. (2020).
+#' Propensity score weighting under limited overlap and model misspecification. Statistical Methods in Medical Research (Online)
+#'
+#'
 #'
 #' @export
 #'
@@ -153,12 +164,12 @@
 #' out.formula<-Y~cov1+cov2+cov3+cov4+cov5+cov6
 #'
 #' # without augmentation
-#' ato1<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,weight = 'ATO')
+#' ato1<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,weight = 'overlap')
 #' summary(ato1)
 #'
 #' # augmented weighting estimator
 #' ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
-#'                augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'ATO')
+#'                augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
 #' summary(ato2)
 #'
 #' @import nnet
@@ -168,7 +179,7 @@
 #' @importFrom  utils capture.output combn
 #' @importFrom  graphics hist legend
 #'
-PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname,data,weight='ATO',delta=0,augmentation=FALSE,bootstrap=FALSE,R=200,out.formula=NULL,out.estimate=NULL,family='gaussian'){
+PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname,data,weight='overlap',delta=0,augmentation=FALSE,bootstrap=FALSE,R=200,out.formula=NULL,out.estimate=NULL,family='gaussian'){
 
   #extract zname
   if(typeof(ps.formula)!="character"){
@@ -178,6 +189,7 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
   if(is.null(zname)){
     zname<-unlist(strsplit(ps.formula,'~'))[[1]][1]
   }
+  data[zname]<-as.character(unlist(data[zname]))
   categoryz1<-unique(unlist(data[zname]))
   z1<-as.numeric(factor(unlist(data[zname])))
   oldlevel1<-categoryz1[order(unique(z1))]
@@ -214,12 +226,16 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
       }
 
       #do the estimation
-      if(weight=='ATO'){
+      if(weight=='overlap'){
         ATObin_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else if(weight=='ATE'){
+      }else if(weight=='IPW'){
         ATEbin_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else{
+      }else if(weight=='treated'){
         ATTbin_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else if(weight=='matching'){
+        ATMbin_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else{
+        ATENbin_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
       }
     }else if(!is.null(out.estimate)){
 
@@ -239,19 +255,25 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
       }
 
       #do the estimation
-      if(weight=='ATO'){
+      if(weight=='overlap'){
         ATObin_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else if(weight=='ATE'){
+      }else if(weight=='IPW'){
         ATEbin_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else{
+      }else if(weight=='treated'){
         ATTbin_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else if(weight=='matching'){
+        ATMbin_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else {
+        ATENbin_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
       }
     }else{
 
       #provided with formula only
       #trim the data
       if(delta>0){
-        fittrim <- glm(ps.formula, family = binomial(link = "logit"),data=data)
+        dttmp<-data
+        dttmp[zname]<-factor(unlist(dttmp[zname]))
+        fittrim <- glm(ps.formula, family = binomial(link = "logit"),data=dttmp)
         e.htrim <- as.numeric(fittrim$fitted.values)
         e.htrim <- cbind(1-e.htrim,e.htrim)
         psidx<-apply(as.matrix(e.htrim),1,function(x) min(x)>delta)
@@ -263,12 +285,16 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
       }
 
       #do the estimation
-      if(weight=='ATO'){
+      if(weight=='overlap'){
         ATObin(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else if(weight=='ATE'){
+      }else if(weight=='IPW'){
         ATEbin(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else{
+      }else if(weight=='treated'){
         ATTbin(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else if(weight=='matching'){
+        ATMbin(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else {
+        ATENbin(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
       }
     }
   }else{
@@ -289,12 +315,16 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
       }
 
       #do the estimation
-      if(weight=='ATO'){
+      if(weight=='overlap'){
         ATOmul_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else if(weight=='ATE'){
+      }else if(weight=='IPW'){
         ATEmul_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else{
+      }else if(weight=='treated'){
         ATTmul_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else if(weight=='matching'){
+        ATMmul_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else {
+        ATENmul_p(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
       }
     }else if(!is.null(out.estimate)){
 
@@ -313,12 +343,16 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
       }
 
       #do the estimation
-      if(weight=='ATO'){
+      if(weight=='overlap'){
         ATOmul_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else if(weight=='ATE'){
+      }else if(weight=='IPW'){
         ATEmul_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else{
+      }else if(weight=='treated'){
         ATTmul_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else if(weight=='matching'){
+        ATMmul_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else {
+        ATENmul_o(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
       }
     }else{
 
@@ -336,12 +370,16 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
       }
 
       #do the estimation
-      if(weight=='ATO'){
+      if(weight=='overlap'){
         ATOmul(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else if(weight=='ATE'){
+      }else if(weight=='IPW'){
         ATEmul(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
-      }else{
+      }else if(weight=='treated'){
         ATTmul(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else if(weight=='matching'){
+        ATMmul(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
+      }else {
+        ATENmul(ps.formula,ps.estimate=ps.estimate,zname,yname,data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,delta=delta)
       }
     }
   }
