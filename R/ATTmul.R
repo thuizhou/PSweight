@@ -176,7 +176,7 @@ ATTmul<-function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NULL,a
       }
       muboot<-rbind(muboot,mu.tmp)
     }
-    muhat<-apply(muboot,2,mean)
+    muhat<-mu.h
     covmu<-cov(muboot)
     names(muhat)<-oldlevel
     colnames(covmu)<-rownames(covmu)<-oldlevel
@@ -185,7 +185,7 @@ ATTmul<-function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NULL,a
     muboot<-muboot[,matchlevel]
   }
   #augmentation and no bootstrap
-  if(augmentation==TRUE&bootstrap==FALSE){
+  if(augmentation==TRUE){
     #compute the augmented tau and variance
     #fit two outcome regression model for different treatment groupd
     dataaug<-data[,colnames(data)!=zname]
@@ -245,239 +245,236 @@ ATTmul<-function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NULL,a
     muhat<-mu.h+augh.h-augz.h
     names(muhat)<-oldlevel
 
-    #Estimate the sandwich variance after augmentation
-    p<-ncol(W)
-    q<-ncol(XY)
-    #define the m estimator
-    phi<-function(theta){
-      mu<-theta[1:ncate]
-      augz<-theta[(ncate+1):(2*ncate)]
-      augh<-theta[(2*ncate+1):(3*ncate)]
-      beta<-theta[(3*ncate+1):(3*ncate+(ncate-1)*p)]
-      gamma<-theta[(3*ncate+(ncate-1)*p+1):(3*ncate+(ncate-1)*p+ncate*q)]
-
-      e<-rep(1,n)
-      for(i in 1:(ncate-1)){
-        etmp=exp(W%*%beta[((i-1)*p+1):(i*p)])
-        e<-cbind(e,etmp)
-      }
-      e<-e/(apply(e,1,sum))
-      th<-e[,1]
-      wtt<-(th/e)
-
-      m<-c()
-
-      if (family=='gaussian'){
-        for(i in 1:ncate){
-          mtmp<-c(XY%*%gamma[((i-1)*q+1):(i*q)])
-          m<-cbind(m,mtmp)}
-      }else if(family=='binomial'){
-        for(i in 1:ncate){
-          mtmp<-plogis(c(XY%*%gamma[((i-1)*q+1):(i*q)]))
-          m<-cbind(m,mtmp)}
-      }else if(family=='poisson'){
-        for(i in 1:ncate){
-          mtmp<-exp(c(XY%*%gamma[((i-1)*q+1):(i*q)]))*offset.e
-          m<-cbind(m,mtmp)}
-      }
-
-      fmu<-c()
-      fbeta<-c()
-      fgamma<-c()
-      faugz<-c()
-      faugh<-c()
-
-      for(i in 1:ncate){
-        fmutmp<-(y-mu[i])*wtt[,i]*(z==i)
-        fmu<-rbind(fmu,fmutmp)
-        fgammatmp<-XY*(y-m[,i])*(z==i)
-        fgamma<-cbind(fgamma,fgammatmp)
-        faugztmp<-(m[,i]-augz[i])*wtt[,i]*(z==i)
-        faughtmp<-(m[,i]-augh[i])*th
-        faugz<-rbind(faugz,faugztmp)
-        faugh<-rbind(faugh,faughtmp)
-      }
-      for(i in 2:ncate){
-        fbetatmp<-((z==i)-e[,i])*W
-        fbeta<-cbind(fbeta,fbetatmp)
-      }
-
-
-      f<-rbind(fmu,faugz,faugh,t(fbeta),t(fgamma))
-      return(f)
-    }
-    #define score function
-    mphi<-function(theta){
-      rowMeans(phi(theta))
-    }
-
-    #define the meat B, covariance operator
-    Omega<-function(theta){
-      phis<-phi(theta)
-      return(tcrossprod(phis)/n)
-    }
-
-    #choose conservative or not
-    conser<-1
-
-    tryCatch( {
-      theta.h<-c(mu.h,augz.h,augh.h,beta.h,gamma.h)
-      Atheta<-jacobian(mphi,theta.h)
-      invAtheta <- solve(Atheta)
-      conser<-0
-    }, error = function(w) {
-      warning("The sandwich matrix not pd, therefore not invertable, use conservative variance instead, please double check")
-      })
-
-    if(conser==1){
+    if(bootstrap==FALSE){
+      #Estimate the sandwich variance after augmentation
+      p<-ncol(W)
+      q<-ncol(XY)
+      #define the m estimator
       phi<-function(theta){
         mu<-theta[1:ncate]
         augz<-theta[(ncate+1):(2*ncate)]
         augh<-theta[(2*ncate+1):(3*ncate)]
+        beta<-theta[(3*ncate+1):(3*ncate+(ncate-1)*p)]
+        gamma<-theta[(3*ncate+(ncate-1)*p+1):(3*ncate+(ncate-1)*p+ncate*q)]
 
-        th<-e.h[,1]
-        wtt<-(th/e.h)
+        e<-rep(1,n)
+        for(i in 1:(ncate-1)){
+          etmp=exp(W%*%beta[((i-1)*p+1):(i*p)])
+          e<-cbind(e,etmp)
+        }
+        e<-e/(apply(e,1,sum))
+        th<-e[,1]
+        wtt<-(th/e)
 
+        m<-c()
+
+        if (family=='gaussian'){
+          for(i in 1:ncate){
+            mtmp<-c(XY%*%gamma[((i-1)*q+1):(i*q)])
+            m<-cbind(m,mtmp)}
+        }else if(family=='binomial'){
+          for(i in 1:ncate){
+            mtmp<-plogis(c(XY%*%gamma[((i-1)*q+1):(i*q)]))
+            m<-cbind(m,mtmp)}
+        }else if(family=='poisson'){
+          for(i in 1:ncate){
+            mtmp<-exp(c(XY%*%gamma[((i-1)*q+1):(i*q)]))*offset.e
+            m<-cbind(m,mtmp)}
+        }
 
         fmu<-c()
+        fbeta<-c()
+        fgamma<-c()
         faugz<-c()
         faugh<-c()
 
         for(i in 1:ncate){
           fmutmp<-(y-mu[i])*wtt[,i]*(z==i)
           fmu<-rbind(fmu,fmutmp)
-          faugztmp<-(m.h[,i]-augz[i])*wtt[,i]*(z==i)
-          faughtmp<-(m.h[,i]-augh[i])*th
+          fgammatmp<-XY*(y-m[,i])*(z==i)
+          fgamma<-cbind(fgamma,fgammatmp)
+          faugztmp<-(m[,i]-augz[i])*wtt[,i]*(z==i)
+          faughtmp<-(m[,i]-augh[i])*th
           faugz<-rbind(faugz,faugztmp)
           faugh<-rbind(faugh,faughtmp)
         }
+        for(i in 2:ncate){
+          fbetatmp<-((z==i)-e[,i])*W
+          fbeta<-cbind(fbeta,fbetatmp)
+        }
 
-        f<-rbind(fmu,faugz,faugh)
+
+        f<-rbind(fmu,faugz,faugh,t(fbeta),t(fgamma))
         return(f)
       }
-      theta.h<-c(mu.h,augz.h,augh.h)
-      Atheta<-jacobian(mphi,theta.h)
-      invAtheta <- solve(Atheta)
-    }
-
-
-    V<-invAtheta%*%Omega(theta.h)%*%t(invAtheta)/n
-    a<-c()
-    for(i in 1:ncate){
-      atmp<-rep(0,length(theta.h))
-      atmp[c(i,2*ncate+i)]<-1
-      atmp[ncate+i]<--1
-      a<-rbind(a,atmp)
-    }
-    covmu<-a%*%V%*%t(a)
-    muboot<-NULL
-    colnames(covmu)<-rownames(covmu)<-oldlevel
-  }
-
-  #augmentation and  bootstrap
-  if(augmentation==TRUE&bootstrap==TRUE){
-    dataaug<-data[,colnames(data)!=zname]
-    muboot<-c()
-    if(family=='gaussian'){
-      for(i in 1:R){
-        if(i %% 50==0){
-          message("bootstrap ", i, " samples")
-        }
-        # estimate ps
-        samp.b<-sample(n,n,replace = TRUE)
-        data.b<-data1[samp.b,]
-        dataaug.b<-dataaug[samp.b,]
-        y.b<-y[samp.b]
-        z.b<-z[samp.b]
-        fit.b <- multinom(formula = ps.formula, data=data.b,maxit = 500, Hess = TRUE, trace = FALSE)
-        e.b <- fit.b$fitted.values
-        # weight estimate
-        tilt.b<-e.b[,1]
-        allwt.b<-(tilt.b/e.b)
-        #the point estimate
-        mu.tmp<-c()
-        augz.tmp<-c()
-        augh.tmp<-c()
-        for(i in 1:ncate){
-          dataaug.tmp<-dataaug.b[z==i,]
-          outcomefit.b<-lm(out.formula,data=dataaug.tmp)
-          m.b<-predict(outcomefit.b,dataaug.b)
-          mu.tmp<-c(mu.tmp,sum(y.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
-          augz.tmp<-c(augz.tmp,sum(m.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
-          augh.tmp<-c(augh.tmp,sum(m.b*tilt.b)/sum(tilt.b))
-        }
-        muboot<-rbind(muboot,mu.tmp-augz.tmp+augh.tmp)
+      #define score function
+      mphi<-function(theta){
+        rowMeans(phi(theta))
       }
-    }else if(family=='binomial'){
-      for(i in 1:R){
-        if(i %% 50==0){
-          message("bootstrap ", i, " samples")
-        }
-        # estimate ps
-        samp.b<-sample(n,n,replace = TRUE)
-        data.b<-data1[samp.b,]
-        dataaug.b<-dataaug[samp.b,]
-        y.b<-y[samp.b]
-        z.b<-z[samp.b]
-        fit.b <- multinom(formula = ps.formula, data=data.b,maxit = 500, Hess = TRUE, trace = FALSE)
-        e.b <- fit.b$fitted.values
-        # weight estimate
-        tilt.b<-e.b[,1]
-        allwt.b<-(tilt.b/e.b)
-        #the point estimate
-        mu.tmp<-c()
-        augz.tmp<-c()
-        augh.tmp<-c()
-        for(i in 1:ncate){
-          dataaug.tmp<-dataaug.b[z==i,]
-          outcomefit.b<-glm(out.formula,family = binomial(link = "logit"),data=dataaug.tmp)
-          m.b<-predict(outcomefit.b,type = "response",dataaug.b)
-          mu.tmp<-c(mu.tmp,sum(y.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
-          augz.tmp<-c(augz.tmp,sum(m.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
-          augh.tmp<-c(augh.tmp,sum(m.b*tilt.b)/sum(tilt.b))
-        }
-        muboot<-rbind(muboot,mu.tmp-augz.tmp+augh.tmp)
+
+      #define the meat B, covariance operator
+      Omega<-function(theta){
+        phis<-phi(theta)
+        return(tcrossprod(phis)/n)
       }
+
+      #choose conservative or not
+      conser<-1
+
+      tryCatch( {
+        theta.h<-c(mu.h,augz.h,augh.h,beta.h,gamma.h)
+        Atheta<-jacobian(mphi,theta.h)
+        invAtheta <- solve(Atheta)
+        conser<-0
+      }, error = function(w) {
+        warning("The sandwich matrix not pd, therefore not invertable, use conservative variance instead, please double check")
+        })
+
+      if(conser==1){
+        phi<-function(theta){
+          mu<-theta[1:ncate]
+          augz<-theta[(ncate+1):(2*ncate)]
+          augh<-theta[(2*ncate+1):(3*ncate)]
+
+          th<-e.h[,1]
+          wtt<-(th/e.h)
+
+
+          fmu<-c()
+          faugz<-c()
+          faugh<-c()
+
+          for(i in 1:ncate){
+            fmutmp<-(y-mu[i])*wtt[,i]*(z==i)
+            fmu<-rbind(fmu,fmutmp)
+            faugztmp<-(m.h[,i]-augz[i])*wtt[,i]*(z==i)
+            faughtmp<-(m.h[,i]-augh[i])*th
+            faugz<-rbind(faugz,faugztmp)
+            faugh<-rbind(faugh,faughtmp)
+          }
+
+          f<-rbind(fmu,faugz,faugh)
+          return(f)
+        }
+        theta.h<-c(mu.h,augz.h,augh.h)
+        Atheta<-jacobian(mphi,theta.h)
+        invAtheta <- solve(Atheta)
+      }
+
+
+      V<-invAtheta%*%Omega(theta.h)%*%t(invAtheta)/n
+      a<-c()
+      for(i in 1:ncate){
+        atmp<-rep(0,length(theta.h))
+        atmp[c(i,2*ncate+i)]<-1
+        atmp[ncate+i]<--1
+        a<-rbind(a,atmp)
+      }
+      covmu<-a%*%V%*%t(a)
+      muboot<-NULL
+      colnames(covmu)<-rownames(covmu)<-oldlevel
     }else{
-      for(i in 1:R){
-        if(i %% 50==0){
-          message("bootstrap ", i, " samples")
+      #augmentation and  bootstrap
+      dataaug<-data[,colnames(data)!=zname]
+      muboot<-c()
+      if(family=='gaussian'){
+        for(i in 1:R){
+          if(i %% 50==0){
+            message("bootstrap ", i, " samples")
+          }
+          # estimate ps
+          samp.b<-sample(n,n,replace = TRUE)
+          data.b<-data1[samp.b,]
+          dataaug.b<-dataaug[samp.b,]
+          y.b<-y[samp.b]
+          z.b<-z[samp.b]
+          fit.b <- multinom(formula = ps.formula, data=data.b,maxit = 500, Hess = TRUE, trace = FALSE)
+          e.b <- fit.b$fitted.values
+          # weight estimate
+          tilt.b<-e.b[,1]
+          allwt.b<-(tilt.b/e.b)
+          #the point estimate
+          mu.tmp<-c()
+          augz.tmp<-c()
+          augh.tmp<-c()
+          for(i in 1:ncate){
+            dataaug.tmp<-dataaug.b[z==i,]
+            outcomefit.b<-lm(out.formula,data=dataaug.tmp)
+            m.b<-predict(outcomefit.b,dataaug.b)
+            mu.tmp<-c(mu.tmp,sum(y.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
+            augz.tmp<-c(augz.tmp,sum(m.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
+            augh.tmp<-c(augh.tmp,sum(m.b*tilt.b)/sum(tilt.b))
+          }
+          muboot<-rbind(muboot,mu.tmp-augz.tmp+augh.tmp)
         }
-        # estimate ps
-        samp.b<-sample(n,n,replace = TRUE)
-        data.b<-data1[samp.b,]
-        dataaug.b<-dataaug[samp.b,]
-        y.b<-y[samp.b]
-        z.b<-z[samp.b]
-        fit.b <- multinom(formula = ps.formula, data=data.b,maxit = 500, Hess = TRUE, trace = FALSE)
-        e.b <- fit.b$fitted.values
-        # point estimate
-        tilt.b<-e.b[,1]
-        allwt.b<-(tilt.b/e.b)
-        #the point estimate
-        mu.tmp<-c()
-        augz.tmp<-c()
-        augh.tmp<-c()
-        for(i in 1:ncate){
-          dataaug.tmp<-dataaug.b[z==i,]
-          outcomefit.b<-glm(out.formula,family = poisson(),data=dataaug.tmp)
-          m.b<-predict(outcomefit.b,type='response',dataaug.b)
-          mu.tmp<-c(mu.tmp,sum(y.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
-          augz.tmp<-c(augz.tmp,sum(m.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
-          augh.tmp<-c(augh.tmp,sum(m.b*tilt.b)/sum(tilt.b))
+      }else if(family=='binomial'){
+        for(i in 1:R){
+          if(i %% 50==0){
+            message("bootstrap ", i, " samples")
+          }
+          # estimate ps
+          samp.b<-sample(n,n,replace = TRUE)
+          data.b<-data1[samp.b,]
+          dataaug.b<-dataaug[samp.b,]
+          y.b<-y[samp.b]
+          z.b<-z[samp.b]
+          fit.b <- multinom(formula = ps.formula, data=data.b,maxit = 500, Hess = TRUE, trace = FALSE)
+          e.b <- fit.b$fitted.values
+          # weight estimate
+          tilt.b<-e.b[,1]
+          allwt.b<-(tilt.b/e.b)
+          #the point estimate
+          mu.tmp<-c()
+          augz.tmp<-c()
+          augh.tmp<-c()
+          for(i in 1:ncate){
+            dataaug.tmp<-dataaug.b[z==i,]
+            outcomefit.b<-glm(out.formula,family = binomial(link = "logit"),data=dataaug.tmp)
+            m.b<-predict(outcomefit.b,type = "response",dataaug.b)
+            mu.tmp<-c(mu.tmp,sum(y.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
+            augz.tmp<-c(augz.tmp,sum(m.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
+            augh.tmp<-c(augh.tmp,sum(m.b*tilt.b)/sum(tilt.b))
+          }
+          muboot<-rbind(muboot,mu.tmp-augz.tmp+augh.tmp)
         }
-        muboot<-rbind(muboot,mu.tmp-augz.tmp+augh.tmp)
+      }else{
+        for(i in 1:R){
+          if(i %% 50==0){
+            message("bootstrap ", i, " samples")
+          }
+          # estimate ps
+          samp.b<-sample(n,n,replace = TRUE)
+          data.b<-data1[samp.b,]
+          dataaug.b<-dataaug[samp.b,]
+          y.b<-y[samp.b]
+          z.b<-z[samp.b]
+          fit.b <- multinom(formula = ps.formula, data=data.b,maxit = 500, Hess = TRUE, trace = FALSE)
+          e.b <- fit.b$fitted.values
+          # point estimate
+          tilt.b<-e.b[,1]
+          allwt.b<-(tilt.b/e.b)
+          #the point estimate
+          mu.tmp<-c()
+          augz.tmp<-c()
+          augh.tmp<-c()
+          for(i in 1:ncate){
+            dataaug.tmp<-dataaug.b[z==i,]
+            outcomefit.b<-glm(out.formula,family = poisson(),data=dataaug.tmp)
+            m.b<-predict(outcomefit.b,type='response',dataaug.b)
+            mu.tmp<-c(mu.tmp,sum(y.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
+            augz.tmp<-c(augz.tmp,sum(m.b*allwt.b[,i]*(z.b==i))/sum(allwt.b[,i]*(z.b==i)))
+            augh.tmp<-c(augh.tmp,sum(m.b*tilt.b)/sum(tilt.b))
+          }
+          muboot<-rbind(muboot,mu.tmp-augz.tmp+augh.tmp)
+        }
       }
+      covmu<-cov(muboot)
+      colnames(covmu)<-rownames(covmu)<-oldlevel
+      colnames(muboot)<-oldlevel
+      rownames(muboot)<-NULL
+      muboot<-muboot[,matchlevel]
     }
-    muhat<-apply(muboot,2,mean)
-    covmu<-cov(muboot)
-    names(muhat)<-oldlevel
-    colnames(covmu)<-rownames(covmu)<-oldlevel
-    colnames(muboot)<-oldlevel
-    rownames(muboot)<-NULL
-    muboot<-muboot[,matchlevel]
   }
-
   muhat<-muhat[matchlevel]
   covmu<-covmu[matchlevel,matchlevel]
 

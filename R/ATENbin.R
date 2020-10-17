@@ -145,7 +145,7 @@ ATENbin <- function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NUL
         mu1.boot<-c(mu1.boot,mu1.b)
         mu0.boot<-c(mu0.boot,mu0.b)
       }
-      muhat<-c(mean(mu0.boot),mean(mu1.boot))
+      muhat<-c(mu0.h,mu1.h)
       covmu<-cov(cbind(mu0.boot,mu1.boot))
       muboot<-cbind(mu0.boot,mu1.boot)
       names(muhat)<-oldlevel
@@ -153,8 +153,8 @@ ATENbin <- function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NUL
       colnames(muboot)<-oldlevel
     }
 
-  #augmentation, no bootstrap
-  if(augmentation==TRUE&bootstrap==FALSE){
+  #augmentation
+  if(augmentation==TRUE){
       #fit two outcome regression model for different treatment groups
       dataaug<-data[,colnames(data)!=zname]
       dataaug0<-dataaug[z==0,]
@@ -203,75 +203,10 @@ ATENbin <- function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NUL
       mu0aug.h<-mu0.h+aug0h.h-aug0z.h
       mu1aug.h<-mu1.h+aug1h.h-aug1z.h
 
-      #Estimate the sandwich variance after augmentation
-      p<-ncol(W)
-      q<-ncol(XY)
-      #define the m estimator
-      phi<-function(theta){
-        mu1<-theta[1]
-        aug1h<-theta[2]
-        aug1z<-theta[3]
-        mu0<-theta[4]
-        aug0h<-theta[5]
-        aug0z<-theta[6]
-        beta<-theta[7:(p+6)]
-        gamma1<-theta[(p+7):(p+6+q)]
-        gamma0<-theta[(p+7+q):(p+2*q+6)]
-        e<-plogis(c(W%*%beta))
-        htilt<--((log(e)*e)+log(1-e)*(1-e))
-        if (family=='gaussian'){
-          m1<-c(XY%*%gamma1)
-          m0<-c(XY%*%gamma0)
-        }else if(family=='binomial'){
-          m1<-plogis(c(XY%*%gamma1))
-          m0<-plogis(c(XY%*%gamma0))
-        }else if(family=='poisson'){
-          m1<-exp(c(XY%*%gamma1))*offset.e
-          m0<-exp(c(XY%*%gamma0))*offset.e
-        }
-
-        #component in m estimator
-        f1<-z*htilt/e*(y-mu1)
-        f2<-(m1-aug1h)*htilt
-        f3<-z*htilt/e*(m1-aug1z)
-        f4<-(1-z)*htilt/(1-e)*(y-mu0)
-        f5<-(m0-aug0h)*htilt
-        f6<-(1-z)*htilt/(1-e)*(m0-aug0z)
-        f7<-XY*(y-m1)*z
-        f8<-XY*(y-m0)*(1-z)
-        f9<-W*(z-e)
-
-        f<-rbind(f1,f2,f3,f4,f5,f6,t(f7),t(f8),t(f9))
-        return(f)
-      }
-      #define score function
-      mphi<-function(theta){
-        rowMeans(phi(theta))
-      }
-
-      #define the meat B, covariance operator
-      Omega<-function(theta){
-        phis<-phi(theta)
-        return(tcrossprod(phis)/n)
-      }
-
-      #choose conservative or not
-      conser<-1
-
-      #when not pd
-      tryCatch( {
-        theta.h<-c(mu1.h,aug1h.h,aug1z.h,mu0.h,aug0h.h,aug0z.h,beta.h,gamma1.h,gamma0.h)
-        Atheta<-jacobian(mphi,theta.h)
-        invAtheta <- solve(Atheta)
-        a0<-c(0,0,0,1,1,-1,rep(0,p+2*q))
-        a1<-c(1,1,-1,0,0,0,rep(0,p+2*q))
-        conser<-0
-      },error = function(w) {
-        warning("The sandwich matrix not pd, therefore not invertable, use conservative variance instead, please double check")
-      })
-
-      #if not pd than use conservative
-      if(conser==1){
+      if(bootstrap==FALSE){
+        #Estimate the sandwich variance after augmentation
+        p<-ncol(W)
+        q<-ncol(XY)
         #define the m estimator
         phi<-function(theta){
           mu1<-theta[1]
@@ -280,161 +215,226 @@ ATENbin <- function(ps.formula,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=NUL
           mu0<-theta[4]
           aug0h<-theta[5]
           aug0z<-theta[6]
+          beta<-theta[7:(p+6)]
+          gamma1<-theta[(p+7):(p+6+q)]
+          gamma0<-theta[(p+7+q):(p+2*q+6)]
+          e<-plogis(c(W%*%beta))
+          htilt<--((log(e)*e)+log(1-e)*(1-e))
+          if (family=='gaussian'){
+            m1<-c(XY%*%gamma1)
+            m0<-c(XY%*%gamma0)
+          }else if(family=='binomial'){
+            m1<-plogis(c(XY%*%gamma1))
+            m0<-plogis(c(XY%*%gamma0))
+          }else if(family=='poisson'){
+            m1<-exp(c(XY%*%gamma1))*offset.e
+            m0<-exp(c(XY%*%gamma0))*offset.e
+          }
 
           #component in m estimator
-          f1<-z*htilt.h/e.h*(y-mu1)
-          f2<-htilt.h*(m1.h-aug1h)
-          f3<-z*htilt.h/e.h*(m1.h-aug1z)
-          f4<-(1-z)*htilt.h/(1-e.h)*(y-mu0)
-          f5<-htilt.h*(m0.h-aug0h)
-          f6<-(1-z)*htilt.h/(1-e.h)*(m0.h-aug0z)
-          f<-rbind(f1,f2,f3,f4,f5,f6)
+          f1<-z*htilt/e*(y-mu1)
+          f2<-(m1-aug1h)*htilt
+          f3<-z*htilt/e*(m1-aug1z)
+          f4<-(1-z)*htilt/(1-e)*(y-mu0)
+          f5<-(m0-aug0h)*htilt
+          f6<-(1-z)*htilt/(1-e)*(m0-aug0z)
+          f7<-XY*(y-m1)*z
+          f8<-XY*(y-m0)*(1-z)
+          f9<-W*(z-e)
+
+          f<-rbind(f1,f2,f3,f4,f5,f6,t(f7),t(f8),t(f9))
           return(f)
         }
-
-        theta.h<-c(mu1.h,aug1h.h,aug1z.h,mu0.h,aug0h.h,aug0z.h)
-        Atheta<-jacobian(mphi,theta.h)
-        invAtheta <- solve(Atheta)
-        a0<-c(0,0,0,1,1,-1)
-        a1<-c(1,1,-1,0,0,0)
-      }
-
-
-      V1<-invAtheta%*%Omega(theta.h)%*%t(invAtheta)/n
-      a<-rbind(a0,a1)
-      covmu<-a%*%V1%*%t(a)
-      muhat<-c(mu0aug.h, mu1aug.h)
-      muboot<-NULL
-      names(muhat)<-oldlevel
-      colnames(covmu)<-rownames(covmu)<-oldlevel
-    }
-
-    #augmentation and bootstrap
-  if(augmentation==TRUE&bootstrap==TRUE){
-      dataaug<-data[,colnames(data)!=zname]
-      mu1aug.boot<-c()
-      mu0aug.boot<-c()
-      if(family=='gaussian'){
-        for(i in 1:R){
-          if(i %% 50==0){
-            message("bootstrap ", i, " samples")
-          }
-          # estimate ps
-          samp.b<-sample(n,n,replace = TRUE)
-          data.b<-data1[samp.b,]
-          y.b<-y[samp.b]
-          z.b<-z[samp.b]
-          fit.b <- glm(ps.formula, family = binomial(link = "logit"),data=data.b)
-          e.b <- as.numeric(fit.b$fitted.values)
-
-          e.clip.b<-as.matrix(pmax(cbind(e.b,1-e.b),1e-6))
-          htilt.b<-c(-rowSums(log(e.clip.b)*e.clip.b))
-
-          # point estimate
-          mu1.b <- sum(z.b*htilt.b*y.b/e.b) / sum(z.b*htilt.b/e.b)
-          mu0.b <- sum((1-z.b)*y.b*htilt.b/(1-e.b)) / sum((1-z.b)*htilt.b/(1-e.b))
-
-          #calculate the augmentation term
-          dataaug.b<-dataaug[samp.b,]
-          dataaug0.b<-dataaug.b[z.b==0,]
-          dataaug1.b<-dataaug.b[z.b==1,]
-          outcomefit0.b<-lm(out.formula,data = dataaug0.b)
-          outcomefit1.b<-lm(out.formula,data = dataaug1.b)
-          #predict using outcome regression for two treatent groups
-          m0.b<-predict(outcomefit0.b,dataaug.b)
-          m1.b<-predict(outcomefit1.b,dataaug.b)
-
-          aug0h.b<-sum(m0.b*htilt.b)/sum(htilt.b)
-          aug0z.b<-sum((1-z.b)*m0.b*htilt.b/(1-e.b))/sum((1-z.b)*htilt.b/(1-e.b))
-          aug1h.b<-sum(m1.b*htilt.b)/sum(htilt.b)
-          aug1z.b<-sum(z.b*m1.b*htilt.b/e.b)/sum(z.b*htilt.b/e.b)
-          mu1aug.boot<-c(mu1aug.boot,mu1.b+aug1h.b-aug1z.b)
-          mu0aug.boot<-c(mu0aug.boot,mu0.b+aug0h.b-aug0z.b)
+        #define score function
+        mphi<-function(theta){
+          rowMeans(phi(theta))
         }
-      }else if(family=='binomial'){
-        for(i in 1:R){
-          if(i %% 50==0){
-            message("bootstrap", i, "samples")
-          }
-          # estimate ps
-          samp.b<-sample(n,n,replace = TRUE)
-          data.b<-data1[samp.b,]
-          y.b<-y[samp.b]
-          z.b<-z[samp.b]
-          fit.b <- glm(ps.formula, family = binomial(link = "logit"),data=data.b)
-          e.b <- as.numeric(fit.b$fitted.values)
 
-          e.clip.b<-pmax(cbind(e.b,1-e.b),1e-6)
-          htilt.b<-c(-colSums(log(e.clip.b)*e.clip.b))
-
-          # point estimate
-          mu1.b <- sum(z.b*htilt.b*y.b/e.b) / sum(z.b*htilt.b/e.b)
-          mu0.b <- sum((1-z.b)*y.b*htilt.b/(1-e.b)) / sum((1-z.b)*htilt.b/(1-e.b))
-
-          #calculate the augmentation term
-          dataaug.b<-dataaug[samp.b,]
-          dataaug0.b<-dataaug.b[z.b==0,]
-          dataaug1.b<-dataaug.b[z.b==1,]
-          outcomefit0.b<-glm(out.formula,family = binomial(link = "logit"),data = dataaug0.b)
-          outcomefit1.b<-glm(out.formula,family = binomial(link = "logit"),data = dataaug1.b)
-          #predict using outcome regression for two treatent groups
-          m0.b<-predict(outcomefit0.b,type = "response",dataaug.b)
-          m1.b<-predict(outcomefit1.b,type = "response",dataaug.b)
-
-          aug0h.b<-sum(m0.b*htilt.b)/sum(htilt.b)
-          aug0z.b<-sum((1-z.b)*m0.b*htilt.b/(1-e.b))/sum((1-z.b)*htilt.b/(1-e.b))
-          aug1h.b<-sum(m1.b*htilt.b)/sum(htilt.b)
-          aug1z.b<-sum(z.b*m1.b*htilt.b/e.b)/sum(z.b*htilt.b/e.b)
-          mu1aug.boot<-c(mu1aug.boot,mu1.b+aug1h.b-aug1z.b)
-          mu0aug.boot<-c(mu0aug.boot,mu0.b+aug0h.b-aug0z.b)
+        #define the meat B, covariance operator
+        Omega<-function(theta){
+          phis<-phi(theta)
+          return(tcrossprod(phis)/n)
         }
+
+        #choose conservative or not
+        conser<-1
+
+        #when not pd
+        tryCatch( {
+          theta.h<-c(mu1.h,aug1h.h,aug1z.h,mu0.h,aug0h.h,aug0z.h,beta.h,gamma1.h,gamma0.h)
+          Atheta<-jacobian(mphi,theta.h)
+          invAtheta <- solve(Atheta)
+          a0<-c(0,0,0,1,1,-1,rep(0,p+2*q))
+          a1<-c(1,1,-1,0,0,0,rep(0,p+2*q))
+          conser<-0
+        },error = function(w) {
+          warning("The sandwich matrix not pd, therefore not invertable, use conservative variance instead, please double check")
+        })
+
+        #if not pd than use conservative
+        if(conser==1){
+          #define the m estimator
+          phi<-function(theta){
+            mu1<-theta[1]
+            aug1h<-theta[2]
+            aug1z<-theta[3]
+            mu0<-theta[4]
+            aug0h<-theta[5]
+            aug0z<-theta[6]
+
+            #component in m estimator
+            f1<-z*htilt.h/e.h*(y-mu1)
+            f2<-htilt.h*(m1.h-aug1h)
+            f3<-z*htilt.h/e.h*(m1.h-aug1z)
+            f4<-(1-z)*htilt.h/(1-e.h)*(y-mu0)
+            f5<-htilt.h*(m0.h-aug0h)
+            f6<-(1-z)*htilt.h/(1-e.h)*(m0.h-aug0z)
+            f<-rbind(f1,f2,f3,f4,f5,f6)
+            return(f)
+          }
+
+          theta.h<-c(mu1.h,aug1h.h,aug1z.h,mu0.h,aug0h.h,aug0z.h)
+          Atheta<-jacobian(mphi,theta.h)
+          invAtheta <- solve(Atheta)
+          a0<-c(0,0,0,1,1,-1)
+          a1<-c(1,1,-1,0,0,0)
+        }
+
+
+        V1<-invAtheta%*%Omega(theta.h)%*%t(invAtheta)/n
+        a<-rbind(a0,a1)
+        covmu<-a%*%V1%*%t(a)
+        muhat<-c(mu0aug.h, mu1aug.h)
+        muboot<-NULL
+        names(muhat)<-oldlevel
+        colnames(covmu)<-rownames(covmu)<-oldlevel
       }else{
-        for(i in 1:R){
-          if(i %% 50==0){
-            message("bootstrap ", i, " samples")
+
+        #augmentation and bootstrap
+        dataaug<-data[,colnames(data)!=zname]
+        mu1aug.boot<-c()
+        mu0aug.boot<-c()
+        if(family=='gaussian'){
+          for(i in 1:R){
+            if(i %% 50==0){
+              message("bootstrap ", i, " samples")
+            }
+            # estimate ps
+            samp.b<-sample(n,n,replace = TRUE)
+            data.b<-data1[samp.b,]
+            y.b<-y[samp.b]
+            z.b<-z[samp.b]
+            fit.b <- glm(ps.formula, family = binomial(link = "logit"),data=data.b)
+            e.b <- as.numeric(fit.b$fitted.values)
+
+            e.clip.b<-as.matrix(pmax(cbind(e.b,1-e.b),1e-6))
+            htilt.b<-c(-rowSums(log(e.clip.b)*e.clip.b))
+
+            # point estimate
+            mu1.b <- sum(z.b*htilt.b*y.b/e.b) / sum(z.b*htilt.b/e.b)
+            mu0.b <- sum((1-z.b)*y.b*htilt.b/(1-e.b)) / sum((1-z.b)*htilt.b/(1-e.b))
+
+            #calculate the augmentation term
+            dataaug.b<-dataaug[samp.b,]
+            dataaug0.b<-dataaug.b[z.b==0,]
+            dataaug1.b<-dataaug.b[z.b==1,]
+            outcomefit0.b<-lm(out.formula,data = dataaug0.b)
+            outcomefit1.b<-lm(out.formula,data = dataaug1.b)
+            #predict using outcome regression for two treatent groups
+            m0.b<-predict(outcomefit0.b,dataaug.b)
+            m1.b<-predict(outcomefit1.b,dataaug.b)
+
+            aug0h.b<-sum(m0.b*htilt.b)/sum(htilt.b)
+            aug0z.b<-sum((1-z.b)*m0.b*htilt.b/(1-e.b))/sum((1-z.b)*htilt.b/(1-e.b))
+            aug1h.b<-sum(m1.b*htilt.b)/sum(htilt.b)
+            aug1z.b<-sum(z.b*m1.b*htilt.b/e.b)/sum(z.b*htilt.b/e.b)
+            mu1aug.boot<-c(mu1aug.boot,mu1.b+aug1h.b-aug1z.b)
+            mu0aug.boot<-c(mu0aug.boot,mu0.b+aug0h.b-aug0z.b)
           }
-          # estimate ps
-          samp.b<-sample(n,n,replace = TRUE)
-          data.b<-data1[samp.b,]
-          y.b<-y[samp.b]
-          z.b<-z[samp.b]
-          fit.b <- glm(ps.formula, family = binomial(link = "logit"),data=data.b)
-          e.b <- as.numeric(fit.b$fitted.values)
+        }else if(family=='binomial'){
+          for(i in 1:R){
+            if(i %% 50==0){
+              message("bootstrap", i, "samples")
+            }
+            # estimate ps
+            samp.b<-sample(n,n,replace = TRUE)
+            data.b<-data1[samp.b,]
+            y.b<-y[samp.b]
+            z.b<-z[samp.b]
+            fit.b <- glm(ps.formula, family = binomial(link = "logit"),data=data.b)
+            e.b <- as.numeric(fit.b$fitted.values)
 
-          e.clip.b<-pmax(cbind(e.b,1-e.b),1e-6)
-          htilt.b<-c(-colSums(log(e.clip.b)*e.clip.b))
+            e.clip.b<-pmax(cbind(e.b,1-e.b),1e-6)
+            htilt.b<-c(-colSums(log(e.clip.b)*e.clip.b))
 
-          # point estimate
-          mu1.b <- sum(z.b*htilt.b*y.b/e.b) / sum(z.b*htilt.b/e.b)
-          mu0.b <- sum((1-z.b)*y.b*htilt.b/(1-e.b)) / sum((1-z.b)*htilt.b/(1-e.b))
+            # point estimate
+            mu1.b <- sum(z.b*htilt.b*y.b/e.b) / sum(z.b*htilt.b/e.b)
+            mu0.b <- sum((1-z.b)*y.b*htilt.b/(1-e.b)) / sum((1-z.b)*htilt.b/(1-e.b))
 
-          #calculate the augmentation term
-          dataaug.b<-dataaug[samp.b,]
-          dataaug0.b<-dataaug.b[z.b==0,]
-          dataaug1.b<-dataaug.b[z.b==1,]
-          outcomefit0.b<-glm(out.formula,family = poisson(),data = dataaug0.b)
-          outcomefit1.b<-glm(out.formula,family = poisson(),data = dataaug1.b)
+            #calculate the augmentation term
+            dataaug.b<-dataaug[samp.b,]
+            dataaug0.b<-dataaug.b[z.b==0,]
+            dataaug1.b<-dataaug.b[z.b==1,]
+            outcomefit0.b<-glm(out.formula,family = binomial(link = "logit"),data = dataaug0.b)
+            outcomefit1.b<-glm(out.formula,family = binomial(link = "logit"),data = dataaug1.b)
+            #predict using outcome regression for two treatent groups
+            m0.b<-predict(outcomefit0.b,type = "response",dataaug.b)
+            m1.b<-predict(outcomefit1.b,type = "response",dataaug.b)
 
-          #predict using outcome regression for two treatent groups
-          m0.b<-predict(outcomefit0.b,dataaug.b,type='response')
-          m1.b<-predict(outcomefit1.b,dataaug.b,type='response')
+            aug0h.b<-sum(m0.b*htilt.b)/sum(htilt.b)
+            aug0z.b<-sum((1-z.b)*m0.b*htilt.b/(1-e.b))/sum((1-z.b)*htilt.b/(1-e.b))
+            aug1h.b<-sum(m1.b*htilt.b)/sum(htilt.b)
+            aug1z.b<-sum(z.b*m1.b*htilt.b/e.b)/sum(z.b*htilt.b/e.b)
+            mu1aug.boot<-c(mu1aug.boot,mu1.b+aug1h.b-aug1z.b)
+            mu0aug.boot<-c(mu0aug.boot,mu0.b+aug0h.b-aug0z.b)
+          }
+        }else{
+          for(i in 1:R){
+            if(i %% 50==0){
+              message("bootstrap ", i, " samples")
+            }
+            # estimate ps
+            samp.b<-sample(n,n,replace = TRUE)
+            data.b<-data1[samp.b,]
+            y.b<-y[samp.b]
+            z.b<-z[samp.b]
+            fit.b <- glm(ps.formula, family = binomial(link = "logit"),data=data.b)
+            e.b <- as.numeric(fit.b$fitted.values)
 
-          aug0h.b<-sum(m0.b*htilt.b)/sum(htilt.b)
-          aug0z.b<-sum((1-z.b)*m0.b*htilt.b/(1-e.b))/sum((1-z.b)*htilt.b/(1-e.b))
-          aug1h.b<-sum(m1.b*htilt.b)/sum(htilt.b)
-          aug1z.b<-sum(z.b*m1.b*htilt.b/e.b)/sum(z.b*htilt.b/e.b)
-          mu1aug.boot<-c(mu1aug.boot,mu1.b+aug1h.b-aug1z.b)
-          mu0aug.boot<-c(mu0aug.boot,mu0.b+aug0h.b-aug0z.b)
+            e.clip.b<-pmax(cbind(e.b,1-e.b),1e-6)
+            htilt.b<-c(-colSums(log(e.clip.b)*e.clip.b))
+
+            # point estimate
+            mu1.b <- sum(z.b*htilt.b*y.b/e.b) / sum(z.b*htilt.b/e.b)
+            mu0.b <- sum((1-z.b)*y.b*htilt.b/(1-e.b)) / sum((1-z.b)*htilt.b/(1-e.b))
+
+            #calculate the augmentation term
+            dataaug.b<-dataaug[samp.b,]
+            dataaug0.b<-dataaug.b[z.b==0,]
+            dataaug1.b<-dataaug.b[z.b==1,]
+            outcomefit0.b<-glm(out.formula,family = poisson(),data = dataaug0.b)
+            outcomefit1.b<-glm(out.formula,family = poisson(),data = dataaug1.b)
+
+            #predict using outcome regression for two treatent groups
+            m0.b<-predict(outcomefit0.b,dataaug.b,type='response')
+            m1.b<-predict(outcomefit1.b,dataaug.b,type='response')
+
+            aug0h.b<-sum(m0.b*htilt.b)/sum(htilt.b)
+            aug0z.b<-sum((1-z.b)*m0.b*htilt.b/(1-e.b))/sum((1-z.b)*htilt.b/(1-e.b))
+            aug1h.b<-sum(m1.b*htilt.b)/sum(htilt.b)
+            aug1z.b<-sum(z.b*m1.b*htilt.b/e.b)/sum(z.b*htilt.b/e.b)
+            mu1aug.boot<-c(mu1aug.boot,mu1.b+aug1h.b-aug1z.b)
+            mu0aug.boot<-c(mu0aug.boot,mu0.b+aug0h.b-aug0z.b)
+          }
         }
+        muhat<-c(mu0aug.h, mu1aug.h)
+        covmu<-cov(cbind(mu0aug.boot,mu1aug.boot))
+        muboot<-cbind(mu0aug.boot,mu1aug.boot)
+        names(muhat)<-oldlevel
+        colnames(covmu)<-rownames(covmu)<-oldlevel
+        colnames(muboot)<-oldlevel
       }
-      muhat<-c(mean(mu0aug.boot),mean(mu1aug.boot))
-      covmu<-cov(cbind(mu0aug.boot,mu1aug.boot))
-      muboot<-cbind(mu0aug.boot,mu1aug.boot)
-      names(muhat)<-oldlevel
-      colnames(covmu)<-rownames(covmu)<-oldlevel
-      colnames(muboot)<-oldlevel
     }
-
 
     e.h<-cbind(1-e.h,e.h)
     colnames(e.h)<-oldlevel

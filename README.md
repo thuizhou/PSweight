@@ -202,10 +202,10 @@ example("PSweight")
 #> Contrast 2 -1  0 1
 #> Contrast 3  0 -1 1
 #> 
-#>             Estimate Std.Error   Lower.CL   Upper.CL
-#> Contrast 1 -1.241607 0.1673446 -1.5695962 -0.9136176
-#> Contrast 2  1.124818 0.1709932  0.7896776  1.4599588
-#> Contrast 3  2.366425 0.2585402  1.8596956  2.8731546
+#>             Estimate Std.Error   Lower.CL   Upper.CL      p.value
+#> Contrast 1 -1.241607 0.1673446 -1.5695962 -0.9136176 1.176836e-13
+#> Contrast 2  1.124818 0.1709932  0.7896776  1.4599588 4.763567e-11
+#> Contrast 3  2.366425 0.2585402  1.8596956  2.8731546 0.000000e+00
 #> 
 #> PSwght> # augmented weighting estimator
 #> PSwght> ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
@@ -220,8 +220,8 @@ example("PSweight")
 #> Contrast 2 -1  0 1
 #> Contrast 3  0 -1 1
 #> 
-#>             Estimate Std.Error   Lower.CL   Upper.CL
-#> Contrast 1 -1.238193 0.1217147 -1.4767496 -0.9996368
-#> Contrast 2  1.165513 0.1348439  0.9012242  1.4298027
-#> Contrast 3  2.403707 0.1829589  2.0451138  2.7622995
+#>             Estimate Std.Error   Lower.CL   Upper.CL p.value
+#> Contrast 1 -1.238193 0.1217147 -1.4767496 -0.9996368       0
+#> Contrast 2  1.165513 0.1348439  0.9012242  1.4298027       0
+#> Contrast 3  2.403707 0.1829589  2.0451138  2.7622995       0
 ```
