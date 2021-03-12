@@ -10,7 +10,10 @@ PStrim(
   zname = NULL,
   ps.estimate = NULL,
   delta = 0,
-  optimal = FALSE
+  optimal = FALSE,
+  out.estimate = NULL,
+  method = "glm",
+  ps.control = list()
 )
 }
 \arguments{
@@ -25,6 +28,17 @@ PStrim(
 \item{delta}{trimming threshold for estimated (generalized) propensity scores. Should be no larger than 1 / number of treatment groups. Default is 0, corresponding to no trimming.}
 
 \item{optimal}{an logical argument indicating if optimal trimming should be used. Default is \code{FALSE}.}
+
+\item{out.estimate}{an optional matrix or data frame containing estimated potential outcomes
+for each observation. Typically, this is an N by J matrix, where N is the number of observations
+and J is the total number of treatment levels. Preferably, the column name of this matrix should
+match the name of treatment level, if column name is missing or there is a mismatch,
+the column names would be assigned according to alphabatic order of the treatment levels, with a
+similar mechanism as in \code{ps.estimate}.}
+
+\item{method}{a character to specify the method for estimating propensity scores. \code{"glm"} is default, and \code{"gbm"} and \code{"SuperLearner"} are also allowed.}
+
+\item{ps.control}{a list to specify additional options when \code{method} is set to \code{"gbm"} or \code{"SuperLearner"}.}
 }
 \value{
 PStrim returns a list of the following values:
@@ -39,6 +53,8 @@ PStrim returns a list of the following values:
 \item{\code{ delta}}{ an optional output of trimming threshold for symmetric trimming. }
 
 \item{\code{ lambda}}{ an optional output trimming threshold for optimal trimming with multiple treatment groups. }
+
+\item{\code{ out.estimate}}{ a data frame of estimated potential outcomes after trimming. }
 }
 }
 \description{
@@ -47,9 +63,16 @@ Trim the original data and propensity estimate according to symmetric propensity
 \details{
 A typical form for \code{ps.formula} is \code{treatment ~ terms} where \code{treatment} is the treatment
 variable (identical to the variable name used to specify \code{zname}) and \code{terms} is a series of terms
-which specifies a linear predictor for \code{treatment}. \code{ps.formula} specifies generalized linear
-model for estimating the propensity scores, when \code{ps.estimate} is \code{NULL}. See \code{glm} for
-more details on generalized linear models.
+which specifies a linear predictor for \code{treatment}. \code{ps.formula} specifies a
+model for estimating the propensity scores, when \code{ps.estimate} is \code{NULL}.
+ \code{"glm"} is the default method for propensity score estimation. Logistic regression will be used for binary outcomes,
+and multinomial logistic regression will be used for outcomes with more than two categories. The alternative method option of \code{"gbm"} serves as an API to call the \code{gbm()} function from the
+\code{gbm} package. Additional argument in the \code{gbm()} function can be supplied through the \code{ps.control=list()} argument in \code{SumStat()}. Please refer to the user manual of the \code{"gbm"} package for all the
+allowed arguments. Currently, models for binary or multinomial treatment will be automatically chosen based on the number of treatment categories.
+\code{"SuperLearner"} is also allowed in the \code{method} argument to call the \code{SuperLearner()} function in \code{SuperLearner} package.
+Currently, the SuperLearner method only support binary treatment with the default method set to \code{"SL.glm"}. The estimation approach is default to \code{"method.NNLS"}.
+Prediction algorithm and other tuning parameters can also be passed through \code{ps.control=list()}. Please refer to the user manual of the \code{SuperLearner} package for all the allowed specifications.
+
 
 When comparing two treatments, \code{ps.estimate} can either be a vector or a two-column matrix of estimated
 propensity scores. If a vector is supplied, it is assumed to be the propensity scores to receive the treatment, and
@@ -57,6 +80,9 @@ the treatment group corresponds to the last group in the alphebatic order, unles
 When comparing multiple (J>=3) treatments, \code{ps.estimate} needs to be specified as an N by J matrix,
 where N indicates the number of observations, and J indicates the total number of treatments.
 This matrix specifies the estimated generalized propensity scores to receive each of the J treatments.
+The same mechanism applies to \code{out.estimate}, except that the input for \code{out.estimate}
+must be an N by J matrix, where each row corresponds to the estimated potential outcomes (corresponding to each treatment)
+for each observation.
 
 With binary treatments, \code{delta} defines the symmetric propensity score trimming rule following Crump et al. (2009).
 With multiple treatments, \code{delta} defines the symmetric multinomial trimming rule introduced in Yoshida et al. (2019).

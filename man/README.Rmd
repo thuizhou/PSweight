@@ -1,0 +1,47 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# PSweight
+
+This `PSweight` Package is to perform propensity score weighting analysis for causal inference. Two main modules are included to assist the design and analysis of observational studies. In the design module, the `SumStat` function is used to generate distributional plots of the estimated propensity scores and balance diagnostics after propensity score weighting. The `summary` and `plot` functions are available to tabulate and plot weighted balance statistics for visual comparisons. In the analysis module, the `PSweight` function, the average potential outcomes for each treatment group is estimated using weighting, and the `summary` function generates point estimates, standard errors and confidence intervals for the desired causal contrasts of interest. The current version of `PSweight` package includes the following types of weights: the overlap weights (ATO), the inverse probability of treatment weights (ATE), the average treatment effect among the treated weights (ATT), the matching weights (ATM) and the entropy weights (ATEN), and allows for binary and multiple (categorical) treatments. In addition to the simple weighting estimator, the package also implements the augmented weighting estimator that combines weighting and outcome regression. For binary outcomes, both the additive and ratio estimands (causal relative risk and odds ratio) are considered, and variance is estimated by either the sandwich method or nonparametric bootstrap. To allow for additional flexibility in specifying the propensity score and outcome models, the package can also work with user-supplied propensity score estimates and outcome predictions through `ps.estimate` and `out.estimate`, and provide a sandwich standard error that ignores the variability in estimating these nuisances.
+
+
+## Installation
+
+You can install the released version of PSweight from [CRAN](https://CRAN.R-project.org) with:
+
+``` r
+install.packages("PSweight")
+```
+
+## Example
+
+This is a basic example on design:
+
+```{r example design}
+library(PSweight)
+example("SumStat")
+```
+
+This is a basic example on analysis:
+
+
+```{r example}
+example("PSweight")
+```
+
+
+
+

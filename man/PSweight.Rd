@@ -15,10 +15,14 @@ PSweight(
   delta = 0,
   augmentation = FALSE,
   bootstrap = FALSE,
-  R = 200,
+  R = 50,
   out.formula = NULL,
   out.estimate = NULL,
-  family = "gaussian"
+  family = "gaussian",
+  ps.method = "glm",
+  ps.control = list(),
+  out.method = "glm",
+  out.control = list()
 )
 }
 \arguments{
@@ -65,7 +69,7 @@ Default is \code{FALSE}.}
 \item{bootstrap}{logical. Indaicate whether bootstrap is used to estimate the standard error
 of the point estimates. Default is \code{FALSE}.}
 
-\item{R}{an optional integer indicating number of bootstrap replicates. Default is \code{R = 200}.}
+\item{R}{an optional integer indicating number of bootstrap replicates. Default is \code{R = 50}.}
 
 \item{out.formula}{an object of class \code{\link{formula}} (or one that can be coerced to that class):
 a symbolic description of the outcome model to be fitted. Additional details of model specification
@@ -82,6 +86,14 @@ similar mechanism as in \code{ps.estimate}.}
 Only required if \code{out.formula} is provided. Supported distributional families include
 \code{"gaussian" (link = identity)}, \code{"binomial" (link = logit)} and \code{"poisson" (link = log)}.
 See \code{\link{family}} in \code{\link{glm}} for more details. Default is \code{"gaussian"}.}
+
+\item{ps.method}{a character to specify the method for estimating propensity scores. \code{"glm"} is default, and \code{"gbm"} and \code{"SuperLearner"} are also allowed.}
+
+\item{ps.control}{a list to specify additional options when \code{method} is set to \code{"gbm"} or \code{"SuperLearner"}.}
+
+\item{out.method}{a character to specify the method for estimating the outcome regression model. \code{"glm"} is default, and \code{"gbm"} and \code{"SuperLearner"} are also allowed.}
+
+\item{out.control}{a list to specify additional options when \code{out.method} is set to \code{"gbm"} or \code{"SuperLearner"}.}
 }
 \value{
 PSweight returns a \code{PSweight} object containing a list of the following values:
@@ -121,9 +133,12 @@ variable (identical to the variable name used to specify \code{zname}) and \code
 which specifies a linear predictor for \code{treatment}. Similarly, a typical form for \code{out.formula} is
 \code{outcome ~ terms} where \code{outcome} is the outcome variable (identical to the variable name
 used to specify \code{yname}) and \code{terms} is a series of terms which specifies a linear
-predictor for \code{outcome}. Both \code{ps.formula} and \code{out.formula} specify generalized
-linear models when \code{ps.estimate} and/or \code{out.estimate} is \code{NULL}. See \code{glm} for
-more details on generalized linear models.
+predictor for \code{outcome}. Both \code{ps.formula} and \code{out.formula} by default specify generalized
+linear models when \code{ps.estimate} and/or \code{out.estimate} is \code{NULL}. The argument \code{ps.method} and \code{out.method} allow user to choose
+model other than glm to fit the propensity score and outcome regression models for augmentation. Additional argument in the \code{gbm()} function can be supplied through the \code{ps.control} and \code{out.control} argument. Please refer to the user manual of the \code{gbm} package for all the
+allowed arguments.  \code{"SuperLearner"} is also allowed in the \code{ps.method} and \code{out.method} arguments. Currently, the SuperLearner method only supports binary treatment with the default method set to \code{"SL.glm"}. The estimation approach is default to \code{"method.NNLS"} for both propensity and outcome regression models.
+Prediction algorithm and other tuning parameters can also be passed through\code{ps.control} and \code{out.control}. Please refer to the user manual of the \code{SuperLearner} package for all the allowed specifications.
+
 
 When comparing two treatments, \code{ps.estimate} can either be a vector or a two-column matrix of estimated
 propensity scores. If a vector is supplied, it is assumed to be the propensity scores to receive the treatment, and
@@ -156,10 +171,10 @@ Li and Li (2019).
 If \code{augmentation = TRUE}, an augmented weighting estimator will be implemented. For binary treatments, the augmented
 weighting estimator is presented in Mao, Li and Greene (2018). For multiple treatments, the augmented weighting estimator is
 mentioned in Li and Li (2019), and additional details will appear in our ongoing work (Zhou et al. 2020+). When
-\code{weight = "ATE"}, the augmented estimator is also referred to as a doubly-robust (DR) estimator.
+\code{weight = "IPW"}, the augmented estimator is also referred to as a doubly-robust (DR) estimator.
 
 When \code{bootstrap = TRUE}, the variance will be calculated by nonparametric bootstrap, with \code{R} bootstrap
-replications. The default of \code{R} is 200. Otherwise, the variance will be calculated using the sandwich variance
+replications. The default of \code{R} is 50. Otherwise, the variance will be calculated using the sandwich variance
 formula obtained in the M-estimation framework.
 }
 \examples{

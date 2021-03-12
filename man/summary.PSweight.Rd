@@ -4,7 +4,7 @@
 \alias{summary.PSweight}
 \title{Summarize a PSweight object}
 \usage{
-\method{summary}{PSweight}(object, contrast = NULL, type = "DIF", ...)
+\method{summary}{PSweight}(object, contrast = NULL, type = "DIF", CI = TRUE, ...)
 }
 \arguments{
 \item{object}{a PSweight object obtained from the \code{\link{PSweight}} function.}
@@ -21,15 +21,15 @@ Estimates for these two ratio estimands will be reported on the log scale (log r
 odds ratio) to improve the approximate for asymptotic normality. With binary outcomes, \code{"DIF"} is the same
 as the average causal risk difference. Default is "DIF" if left empty.}
 
+\item{CI}{a logical argument indicates whether confidence interval should be calculated. Default is \code{CI = TRUE}.}
+
 \item{...}{further arguments passed to or from other methods.}
 }
 \value{
 A list of following values:
 
 \describe{
-\item{\code{ trtgrp}}{ a character indicating the treatment group, or target population under ATT weights.}
-
-\item{\code{ estimates}}{ a matrix of point estimates, standard errors and 95% confidence intervals
+\item{\code{ estimates}}{ a matrix of point estimates, standard errors, test statistics, 95% confidence intervals and p-values
 for contrasts of interest.}
 
 \item{\code{ bootestimates}}{ a list of data frames containing estimated contrasts in each bootstrap replicate,
@@ -40,6 +40,11 @@ if bootstrap is used to estimate standard errors.}
 \item{\code{ group}}{ a table of treatment group labels corresponding to the output point estimates, provided in results
 obtained from \code{\link{PSweight}}.}
 
+\item{\code{ trtgrp}}{ a character indicating the treatment group, or target population under ATT weights.}
+
+\item{\code{ type}}{ a character specifying the target estimand.}
+
+\item{\code{ CI}}{a logical indaicator of whether confidence interval should be reported.}
 }
 }
 \description{

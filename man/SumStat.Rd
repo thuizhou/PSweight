@@ -5,7 +5,7 @@
 \title{Calculate summary statistics for propensity score weighting}
 \usage{
 SumStat(
-  ps.formula,
+  ps.formula = NULL,
   ps.estimate = NULL,
   trtgrp = NULL,
   Z = NULL,
@@ -14,7 +14,9 @@ SumStat(
   xname = NULL,
   data = NULL,
   weight = "overlap",
-  delta = 0
+  delta = 0,
+  method = "glm",
+  ps.control = list()
 )
 }
 \arguments{
@@ -37,6 +39,10 @@ SumStat(
 \item{weight}{a character or vector of characters including the types of weights to be used. \code{"IPW"} specifies the inverse probability weights for estimating the average treatment effect among the combined population (ATE). \code{"treated"} specifies the weights for estimating the average treatment effect among the treated (ATT). \code{"overlap"} specifies the (generalized) overlap weights for estimating the average treatment effect among the overlap population (ATO), or population at clinical equipoise. \code{"matching"} specifies the matching weights for estimating the average treatment effect among the matched population (ATM). \code{"entropy"} specifies the entropy weights for the average treatment effect of entropy weighted population (ATEN). Default is \code{"overlap"}.}
 
 \item{delta}{trimming threshold for estimated (generalized) propensity scores. Should be no larger than 1 / number of treatment groups. Default is 0, corresponding to no trimming.}
+
+\item{method}{a character to specify the method for estimating propensity scores. \code{"glm"} is default, and \code{"gbm"} and \code{"SuperLearner"} are also allowed.}
+
+\item{ps.control}{a list to specify additional options when \code{method} is set to \code{"gbm"} or \code{"SuperLearner"}.}
 }
 \value{
 SumStat returns a \code{SumStat} object including a list of the following value:
@@ -106,6 +112,14 @@ multinomial trimming rule introduced in Yoshida et al. (2019). The overlap weigh
 a data-driven continuous trimming strategy without specifying trimming rules, see Li, Thomas and Li (2019).
 Additional details on balancing weights and generalized overlap weights for multiple treatment groups are provided in
 Li and Li (2019). For details about matching weights and entropy weights, please refer to Li and Greene (2013) and Zhou, Matsouaka and Thomas (2020).
+
+\code{"glm"} is the default method for propensity score estimation. Logistic regression will be used for binary outcomes,
+and multinomial logistic regression will be used for outcomes with more than two categories. The alternative method option of \code{"gbm"} serves as an API to call the \code{gbm()} function from the
+\code{gbm} package. Additional argument in the \code{gbm()} function can be supplied through the \code{ps.control=list()} argument in \code{SumStat()}. Please refer to the user manual of the gbm package for all the
+allowed arguments. Currently, models for binary or multinomial treatment will be automatically chosen based on the number of treatment categories.
+\code{"SuperLearner"} is also allowed in the \code{method} argument to pass the propensity score estimation to the \code{SuperLearner()} function in SuperLearner package.
+Currently, the SuperLearner method only supports binary treatment with the default method set to \code{"SL.glm"}. The estimation approach is default to \code{"method.NNLS"} in the \code{SumStat()} function.
+Prediction algorithm and other tuning parameters can also be passed through \code{ps.control=list()} to \code{SumStat()}. Please refer to the user manual of the \code{SuperLearner} package for all the allowed specifications.
 }
 \examples{
 
@@ -116,7 +130,7 @@ ps.formula<-trt~cov1+cov2+cov3+cov4+cov5+cov6
 # using SumStat to estimate propensity scores
 msstat <- SumStat(ps.formula, trtgrp="2", data=psdata,
    weight=c("IPW","overlap","treated","entropy","matching"))
-summary(msstat)
+#summary(msstat)
 
 # importing user-supplied propensity scores "e.h"
 fit <- nnet::multinom(formula=ps.formula, data=psdata, maxit=500, trace=FALSE)
@@ -131,6 +145,8 @@ summary(msstat0)
 Crump, R. K., Hotz, V. J., Imbens, G. W., Mitnik, O. A. (2009).
 Dealing with limited overlap in estimation of average treatment effects. Biometrika, 96(1), 187-199.
 
+Greenwell B., Boehmke B.,Cunningham J, GBM Developers (2020) gbm: Generalized Boosted Regression Models. Cran: https://cran.r-project.org/web/packages/gbm/index.html
+
 Li, L., Greene, T. (2013).
 A weighting analogue to pair matching in propensity score analysis. The International Journal of Biostatistics, 9(2), 215-234.
 
@@ -138,15 +154,15 @@ Li, F., Morgan, K. L., Zaslavsky, A. M. (2018).
 Balancing covariates via propensity score weighting.
 Journal of the American Statistical Association, 113(521), 390-400.
 
-
 Li, F., Thomas, L. E., Li, F. (2019).
 Addressing extreme propensity scores via the overlap weights. American Journal of Epidemiology, 188(1), 250-257.
+
+Polley E., LeDell E., Kennedy C., Lendle S., van der Laan M. (2019) SuperLearner: Super Learner Prediction. Cran: https://cran.r-project.org/web/packages/SuperLearner/index.html
 
 Yoshida, K., Solomon, D.H., Haneuse, S., Kim, S.C., Patorno, E., Tedeschi, S.K., Lyu, H.,
 Franklin, J.M., Stürmer, T., Hernández-Díaz, S. and Glynn, R.J. (2019).
 Multinomial extension of propensity score trimming methods: A simulation study.
 American Journal of Epidemiology, 188(3), 609-616.
-
 
 Li, F., Li, F. (2019). Propensity score weighting for causal inference with multiple treatments.
 The Annals of Applied Statistics, 13(4), 2389-2415.
