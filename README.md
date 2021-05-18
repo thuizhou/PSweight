@@ -39,7 +39,8 @@ You can install the released version of PSweight from
 install.packages("PSweight")
 ```
 
-##Downloads
+## Downloads
+
 [![Downloads Status](https://cranlogs.r-pkg.org/badges/grand-total/PSweight)
 
 ## Example
