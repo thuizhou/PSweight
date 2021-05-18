@@ -41,7 +41,7 @@ install.packages("PSweight")
 
 ## Downloads
 
-[![Downloads Status](https://cranlogs.r-pkg.org/badges/grand-total/PSweight)
+![Downloads Status](https://cranlogs.r-pkg.org/badges/grand-total/PSweight)
 
 ## Example
 
