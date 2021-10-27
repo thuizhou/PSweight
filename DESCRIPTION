@@ -1,8 +1,8 @@
 Package: PSweight
 Type: Package
 Title: Propensity Score Weighting for Causal Inference with Observational Studies and Randomized Trials
-Version: 1.1.4
-Date: 2021-03-11
+Version: 1.1.5
+Date: 2021-10-27
 Authors@R: c(person("Tianhui","Zhou", role = c("aut", "cre"),
             email = "tianhui.zhou@duke.edu"),
             person("Guangyu", "Tong", role = "aut",

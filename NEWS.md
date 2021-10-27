@@ -1,4 +1,4 @@
-# PSweight 1.1.4
+# PSweight 1.1.5
 
-## Major changes
-Added machine learning methods for the estimation of propensity scores and potential outcomes
+## Minor changes
+Fixed typos in PSweight argument

@@ -187,10 +187,10 @@ out.formula<-Y~cov1+cov2+cov3+cov4+cov5+cov6
 ato1<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,weight = 'overlap')
 summary(ato1)
 
-# augmented weighting estimator
-ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
-               augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
-summary(ato2)
+# augmented weighting estimator, takes longer time to calculate sandwich variance
+# ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
+#              augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
+# summary(ato2)
 
 }
 \references{

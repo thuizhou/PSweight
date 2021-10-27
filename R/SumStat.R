@@ -131,12 +131,12 @@
 #' #summary(msstat)
 #'
 #' # importing user-supplied propensity scores "e.h"
-#' fit <- nnet::multinom(formula=ps.formula, data=psdata, maxit=500, trace=FALSE)
-#' e.h <- fit$fitted.values
-#' varname <- c("cov1","cov2","cov3","cov4","cov5","cov6")
-#' msstat0 <- SumStat(zname="trt", xname=varname, data=psdata, ps.estimate=e.h,
-#'    trtgrp="2",  weight=c("IPW","overlap","treated","entropy","matching"))
-#' summary(msstat0)
+#' # fit <- nnet::multinom(formula=ps.formula, data=psdata, maxit=500, trace=FALSE)
+#' # e.h <- fit$fitted.values
+#' # varname <- c("cov1","cov2","cov3","cov4","cov5","cov6")
+#' # msstat0 <- SumStat(zname="trt", xname=varname, data=psdata, ps.estimate=e.h,
+#' #  trtgrp="2",  weight=c("IPW","overlap","treated","entropy","matching"))
+#' # summary(msstat0)
 #'
 #' @import nnet SuperLearner gbm
 #' @importFrom  stats binomial coef cov formula glm lm model.matrix plogis poisson predict qnorm quantile sd

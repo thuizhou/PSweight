@@ -30,6 +30,11 @@ score estimates and outcome predictions through `ps.estimate` and
 `out.estimate`, and provide a sandwich standard error that ignores the
 variability in estimating these nuisances.
 
+## Link to Paper
+
+You can access the [paper](https://arxiv.org/pdf/2010.08893.pdf) with
+examples on real-world dateset.
+
 ## Installation
 
 You can install the released version of PSweight from
@@ -41,7 +46,8 @@ install.packages("PSweight")
 
 ## Downloads
 
-![Downloads Status](https://cranlogs.r-pkg.org/badges/grand-total/PSweight)
+![Downloads
+Status](https://cranlogs.r-pkg.org/badges/grand-total/PSweight)
 
 ## Example
 
@@ -63,69 +69,16 @@ example("SumStat")
 #> SumStt> #summary(msstat)
 #> SumStt> 
 #> SumStt> # importing user-supplied propensity scores "e.h"
-#> SumStt> fit <- nnet::multinom(formula=ps.formula, data=psdata, maxit=500, trace=FALSE)
-#> 
-#> SumStt> e.h <- fit$fitted.values
-#> 
-#> SumStt> varname <- c("cov1","cov2","cov3","cov4","cov5","cov6")
-#> 
-#> SumStt> msstat0 <- SumStat(zname="trt", xname=varname, data=psdata, ps.estimate=e.h,
-#> SumStt+    trtgrp="2",  weight=c("IPW","overlap","treated","entropy","matching"))
-#> 
-#> SumStt> summary(msstat0)
-#> unweighted result
-#>      Mean 1 Mean 2 Mean 3   SMD
-#> cov1 -0.213  0.180 -0.074 0.270
-#> cov2 -0.186  0.146 -0.080 0.332
-#> cov3  0.009 -0.054 -0.019 0.062
-#> cov4  0.150 -0.448  0.464 0.530
-#> cov5  0.998  0.738  1.351 0.452
-#> cov6  0.501  0.507  0.495 0.024
-#> 
-#> IPW result
-#>      Mean 1 Mean 2 Mean 3   SMD
-#> cov1 -0.022  0.002  0.000 0.016
-#> cov2 -0.023 -0.030 -0.027 0.007
-#> cov3 -0.007 -0.030 -0.031 0.024
-#> cov4  0.003  0.027  0.001 0.015
-#> cov5  1.003  1.146  1.013 0.097
-#> cov6  0.495  0.486  0.489 0.018
-#> 
-#> overlap result
-#>      Mean 1 Mean 2 Mean 3   SMD
-#> cov1 -0.041 -0.043 -0.036 0.005
-#> cov2 -0.042 -0.066 -0.055 0.025
-#> cov3 -0.011 -0.013 -0.029 0.017
-#> cov4  0.095  0.096  0.093 0.002
-#> cov5  0.961  0.987  0.976 0.020
-#> cov6  0.491  0.489  0.487 0.007
-#> 
-#> treated result
-#>      Mean 1 Mean 2 Mean 3   SMD
-#> cov1  0.124  0.180  0.209 0.059
-#> cov2  0.117  0.146  0.126 0.029
-#> cov3  0.013 -0.054 -0.071 0.083
-#> cov4 -0.435 -0.448 -0.454 0.011
-#> cov5  0.747  0.738  0.764 0.026
-#> cov6  0.498  0.507  0.486 0.043
-#> 
-#> entropy result
-#>      Mean 1 Mean 2 Mean 3   SMD
-#> cov1 -0.039 -0.029 -0.027 0.009
-#> cov2 -0.040 -0.056 -0.048 0.016
-#> cov3 -0.009 -0.020 -0.028 0.018
-#> cov4  0.060  0.070  0.058 0.007
-#> cov5  0.986  1.072  1.001 0.061
-#> cov6  0.493  0.487  0.488 0.012
-#> 
-#> matching result
-#>      Mean 1 Mean 2 Mean 3   SMD
-#> cov1 -0.024 -0.043 -0.021 0.016
-#> cov2 -0.027 -0.057 -0.045 0.031
-#> cov3 -0.018 -0.008 -0.036 0.028
-#> cov4  0.165  0.167  0.161 0.004
-#> cov5  0.932  0.923  0.944 0.017
-#> cov6  0.484  0.494  0.489 0.019
+#> SumStt> # fit <- nnet::multinom(formula=ps.formula, data=psdata, maxit=500, trace=FALSE)
+#> SumStt> # e.h <- fit$fitted.values
+#> SumStt> # varname <- c("cov1","cov2","cov3","cov4","cov5","cov6")
+#> SumStt> # msstat0 <- SumStat(zname="trt", xname=varname, data=psdata, ps.estimate=e.h,
+#> SumStt> #  trtgrp="2",  weight=c("IPW","overlap","treated","entropy","matching"))
+#> SumStt> # summary(msstat0)
+#> SumStt> 
+#> SumStt> 
+#> SumStt> 
+#> SumStt>
 ```
 
 This is a basic example on analysis:
@@ -162,26 +115,12 @@ example("PSweight")
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> PSwght> # augmented weighting estimator
-#> PSwght> ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
-#> PSwght+                augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
-#> 
-#> PSwght> summary(ato2)
-#> 
-#> Closed-form inference: 
-#> 
-#> Original group value:  1, 2, 3 
-#> 
-#> Contrast: 
-#>             1  2 3
-#> Contrast 1 -1  1 0
-#> Contrast 2 -1  0 1
-#> Contrast 3  0 -1 1
-#> 
-#>            Estimate Std.Error      lwr      upr  Pr(>|z|)    
-#> Contrast 1 -1.23819   0.12773 -1.48854 -0.98784 < 2.2e-16 ***
-#> Contrast 2  1.16551   0.15563  0.86048  1.47054  6.95e-14 ***
-#> Contrast 3  2.40371   0.20991  1.99229  2.81512 < 2.2e-16 ***
-#> ---
-#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> PSwght> # augmented weighting estimator, takes longer time to calculate sandwich variance
+#> PSwght> # ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
+#> PSwght> #              augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
+#> PSwght> # summary(ato2)
+#> PSwght> 
+#> PSwght> 
+#> PSwght> 
+#> PSwght>
 ```

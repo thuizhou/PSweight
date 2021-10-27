@@ -174,10 +174,10 @@
 #' ato1<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,weight = 'overlap')
 #' summary(ato1)
 #'
-#' # augmented weighting estimator
-#' ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
-#'                augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
-#' summary(ato2)
+#' # augmented weighting estimator, takes longer time to calculate sandwich variance
+#' # ato2<-PSweight(ps.formula = ps.formula,yname = 'Y',data = psdata,
+#' #              augmentation = TRUE,out.formula = out.formula,family = 'gaussian',weight = 'overlap')
+#' # summary(ato2)
 #'
 #' @import nnet
 #' @import MASS
@@ -202,7 +202,7 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
 
   #trim the data
   if(delta>0){
-    trimobj<-do.call(PStrim,list(data=data,ps.formula = ps.formula, zname=zname, ps.estimte=ps.estimate,delta=delta,optimal=FALSE,out.estimate=out.estimate,method=ps.method,ps.control=ps.control))
+    trimobj<-do.call(PStrim,list(data=data,ps.formula = ps.formula, zname=zname, ps.estimate=ps.estimate,delta=delta,optimal=FALSE,out.estimate=out.estimate,method=ps.method,ps.control=ps.control))
     data<-trimobj$data
     ps.estimate<-trimobj$ps.estimate
     out.estimate<-trimobj$out.estimate
