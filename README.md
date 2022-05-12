@@ -44,6 +44,11 @@ You can install the released version of PSweight from
 install.packages("PSweight")
 ```
 
+## Update
+
+The version 1.1.7 includes module for cluster design. Please check out the help page for PSweight_cl and SumStat_cl.
+
+
 ## Downloads
 
 ![Downloads
