@@ -42,7 +42,7 @@ mulest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
   # obtain ps estimation
   # estimate with formula
   if(is.null(ps.estimate)){
-    fit<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data_p,ncate=ncate),ps.control=ps.control))
+    fit<-do.call(PSmethod, list(ps.formula=ps.formula, method=ps.method, data=data_p, ncate=ncate, ps.control=ps.control))
     W<- model.matrix(formula(ps.formula),data_p)                      # design matrix
     e.h <- fit$e.h
     beta.h<-as.numeric(fit$beta.h)
@@ -242,7 +242,7 @@ mulest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
         dataaug.b<-dataaug[samp.b,]
         y.b<-y[samp.b]
         z.b<-z[samp.b]
-        fit.b<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data.b,ncate=ncate),ps.control))
+        fit.b<-do.call(PSmethod,c(list(ps.formula=ps.formula, method=ps.method, data=data.b, ncate=ncate), ps.control=ps.control))
         e.b <- fit.b$e.h
 
         m.b<-NULL

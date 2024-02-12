@@ -164,7 +164,9 @@ PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate, 
           ps.control$SL.library<-unlist(ps.control$SL.library)[1]
           warning("only one method allowed in SL.library argument of SuperLearner in PSweight; the first element in SL.library is taken")
         }
-        if (!ps.control$SL.library %in% SL.all) stop("SL.library argument unrecgonized; please use listWrappers() in SuperLearner to find the list of supported values")
+        if (!ps.control$SL.library %in% SL.all) {
+          stop("SL.library argument unrecgonized; please use listWrappers() in SuperLearner to find the list of supported values")
+        }
       }else{ #no SL.library specified
         ps.control$SL.library="SL.glm"
       }
