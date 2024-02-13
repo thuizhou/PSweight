@@ -121,7 +121,7 @@ PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate, 
 
       warning("current multinomial distribution is broken in gbm; fitted results are rescaled to have rowsums of 1")
 
-      fitgbm <- do.call(gbm::gbm, c(list(formula = ps.formula, data=dataps), ps.control))
+      fitgbm <- do.call(gbm::gbm, c(list(formula = ps.formula, data=data), ps.control))
 
       #standardize
       e.h<-predict(fitgbm, newdata = data, type = "response")[,,1]
