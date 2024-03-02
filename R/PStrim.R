@@ -124,7 +124,7 @@ PStrim<-function(data,ps.formula=NULL,zname=NULL,ps.estimate=NULL,delta=0,optima
       if(1/ncate<=delta){
         warning('invalid trimming, return original data')
       }else{
-        propensity<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=method, data=datatmp,ncate=ncate),ps.control))$e.h
+        propensity<-do.call(PSmethod, list(ps.formula=ps.formula, method=method, data=datatmp, ncate=ncate, ps.control=ps.control))$e.h
         psidx<-apply(as.matrix(propensity),1,function(x) min(x)>delta)
         if(length(unique(z[psidx]))==ncate){
           data<-data[psidx,]
@@ -156,7 +156,7 @@ PStrim<-function(data,ps.formula=NULL,zname=NULL,ps.estimate=NULL,delta=0,optima
     if (delta>0) warning('delta is ignored when optimal trimming is used')
     if (ncate==2){
       if(is.null(ps.estimate)){
-        propensity<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=method, data=datatmp,ncate=ncate),ps.control))$e.h
+        propensity<-do.call(PSmethod, list(ps.formula=ps.formula, method=method, data=datatmp, ncate=ncate, ps.control=ps.control))$e.h
       }else{
         if(length(ps.estimate)==n){
           ps.estimate<-cbind(1-ps.estimate,ps.estimate)
@@ -181,7 +181,7 @@ PStrim<-function(data,ps.formula=NULL,zname=NULL,ps.estimate=NULL,delta=0,optima
       }
     }else{
       if(is.null(ps.estimate)){
-        propensity<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=method, data=datatmp,ncate=ncate),ps.control))$e.h
+        propensity<-do.call(PSmethod, list(ps.formula = ps.formula, method=method, data=datatmp,ncate=ncate, ps.control=ps.control))$e.h
       }else{
         propensity<-ps.estimate
       }

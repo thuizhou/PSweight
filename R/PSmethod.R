@@ -39,7 +39,7 @@
 #' psfit <- PSmethod(ps.formula = ps.formula,data = psdata,ncate=3)
 #'
 #'
-PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate,...){
+PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate, ps.control){
 
   zname<-all.vars(ps.formula)[1]
 
@@ -69,64 +69,60 @@ PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate,.
     }
     beta.h<-as.numeric(t(coef(fitglm)))
   }
-
+ 
   ############## gbm ###################################################################
   if (method=="gbm"){
-    if (exists("distribution")){
-      if (!distribution %in% c("bernoulli","adaboost","multinomial")){
+    if ("distribution" %in% names(ps.control)){
+      if (!ps.control$distribution %in% c("bernoulli","adaboost","multinomial")){
         stop("only bernoulli, adaboost, or multinomial distributions in 'gbm' are supported in propensity score models of PSweight")
       }
     }
 
-    if (exists("var.monotone")) var.monotone=var.monotone else var.monotone=NULL
-    if (exists("weights")) weights=weights else weights=NULL
-    if (exists("n.trees")) n.trees=n.trees else n.trees=100
-    if (exists("interaction.depth")) interaction.depth=interaction.depth else interaction.depth=1
-    if (exists("n.minobsinnode")) n.minobsinnode=n.minobsinnode else n.minobsinnode=10
-    if (exists("shrinkage")) shrinkage=shrinkage else shrinkage=0.1
-    if (exists("bag.fraction")) bag.fraction=bag.fraction else bag.fraction=0.5
-    if (exists("train.fraction")) train.fraction=train.fraction else train.fraction=1
-    if (exists("cv.folds")) cv.folds=cv.folds else cv.folds=0
-    if (exists("class.stratify.cv ")) class.stratify.cv =class.stratify.cv  else class.stratify.cv=NULL
-    if (exists("n.cores ")) n.cores =n.cores  else n.cores=NULL
-    if (exists("verbose")) warning("verbose argument set to F for SuperLearner in PSweight")
+    if (!("var.monotone" %in% names(ps.control))) ps.control$var.monotone=NULL
+    if (!("weights" %in% names(ps.control))) ps.control$weights=NULL
+    if (!("n.trees" %in% names(ps.control))) ps.control$n.trees=100
+    if (!("interaction.depth" %in% names(ps.control))) ps.control$interaction.depth=1
+    if (!("n.minobsinnode" %in% names(ps.control))) ps.control$n.minobsinnode=10
+    if (!("shrinkage" %in% names(ps.control))) ps.control$shrinkage=0.1
+    if (!("bag.fraction" %in% names(ps.control))) ps.control$bag.fraction=0.5
+    if (!("train.fraction" %in% names(ps.control))) ps.control$train.fraction=1
+    if (!("cv.folds" %in% names(ps.control))) ps.control$cv.folds=0
+    if (!("class.stratify.cv" %in% names(ps.control))) ps.control$class.stratify.cv=NULL
+    if (!("n.cores" %in% names(ps.control))) ps.control$n.cores=NULL
+    if ("verbose" %in% names(ps.control)) warning("verbose argument set to F for gbm in PSweight")
+    ps.control$verbose <- FALSE
 
     if(ncate==2){
       #change z to 0/1
       dataps<-data
       dataps[,zname]<- as.numeric(facz)-1
 
-      if (exists("distribution")) {
-        if (!distribution %in% c("adaboost","bernoulli")) {
-          distribution<-"bernoulli"
+      if ("distribution" %in% names(ps.control)) {
+        if (!ps.control$distribution %in% c("adaboost","bernoulli")) {
+          ps.control$distribution<-"bernoulli"
           warning("supplied unsupported distribution for binary outcome in gbm; reset to bernoulli")
         }
       }else{
-        distribution<-"bernoulli"
+        ps.control$distribution<-"bernoulli"
       }
 
-      fitgbm <- gbm::gbm(formula = ps.formula, data=dataps,distribution=distribution, var.monotone=var.monotone, n.trees=n.trees,
-                       interaction.depth = interaction.depth, n.minobsinnode = n.minobsinnode, shrinkage = shrinkage, bag.fraction = bag.fraction,
-                       train.fraction = train.fraction, cv.folds = cv.folds, keep.data = T, verbose = F,
-                       class.stratify.cv = class.stratify.cv, n.cores = n.cores)
+      fitgbm <- do.call(gbm::gbm, c(list(formula = ps.formula, data=dataps), ps.control))
 
       e.h<-exp(fitgbm$fit)/(1+exp(fitgbm$fit))
       e.h<-cbind(1-e.h,e.h)
     }else if (ncate>2){
-      if (exists("distribution")) {
-        if (!distribution=="multinomial"){
+      if ("distribution" %in% names(ps.control)) {
+        if (!ps.control$distribution=="multinomial"){
           warning("distribution for multi-category outcome reset to multinomial")
         }
       }
 
-      distribution<-"multinomial"
+      ps.control$distribution<-"multinomial"
 
       warning("current multinomial distribution is broken in gbm; fitted results are rescaled to have rowsums of 1")
 
-      fitgbm <- gbm::gbm(formula = ps.formula, data=data,distribution=distribution, var.monotone=var.monotone, n.trees=n.trees,
-                       interaction.depth = interaction.depth, n.minobsinnode = n.minobsinnode, shrinkage = shrinkage, bag.fraction = bag.fraction,
-                       train.fraction = train.fraction, cv.folds = cv.folds, keep.data = T, verbose = F,
-                       class.stratify.cv = class.stratify.cv, n.cores = n.cores)
+      fitgbm <- do.call(gbm::gbm, c(list(formula = ps.formula, data=data), ps.control))
+
       #standardize
       e.h<-predict(fitgbm, newdata = data, type = "response")[,,1]
 
@@ -135,17 +131,20 @@ PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate,.
 
 ############## super learner #############################################################
   if (method=="SuperLearner"){
-    if (exists("distribution")){
+    if ("distribution" %in% names(ps.control)){
       warning("distribution argument not supported by SuperLearner; only family argument is supported")
     }
 
-    if (exists("newX")) warning("newX argument set to NULL for SuperLearner in PSweight; please use method argument")
-    if (exists("id")) warning("id argument set to NULL for SuperLearner in PSweight")
-    if (exists("verbose")) warning("verbose argument set to F for SuperLearner in PSweight")
-    if (exists("obsWeights")) obsWeights<-obsWeights else obsWeights=NULL
-    if (exists("control")) control<-control else control<-list()
-    if (exists("cvControl")) cvControl<-cvControl else cvControl<-list()
-    if (exists("env")) env<-env else env<-parent.frame()
+    if ("newX" %in% names(ps.control)) warning("newX argument set to NULL for SuperLearner in PSweight; please use method argument")
+    ps.control$newX <- NULL
+    if ("id" %in% names(ps.control)) warning("id argument set to NULL for SuperLearner in PSweight")
+    ps.control$id <- NULL
+    if ("verbose" %in% names(ps.control)) warning("verbose argument set to F for SuperLearner in PSweight")
+    ps.control$verbose <- FALSE
+    if (!("obsWeights" %in% names(ps.control))) ps.control$obsWeights<-NULL
+    if (!("control" %in% names(ps.control))) ps.control$control<-list()
+    if (!("cvControl" %in% names(ps.control))) ps.control$cvControl<-list()
+    if (!("env" %in% names(ps.control))) ps.control$env<-parent.frame()
 
 
     family="binomial"
@@ -160,21 +159,22 @@ PSmethod<-function(ps.formula=ps.formula, method="glm", data=data, ncate=ncate,.
                 "SL.nnls","SL.polymars","SL.qda","SL.randomForest","SL.ranger","SL.ridge","SL.rpart","SL.rpartPrune","SL.speedglm",
                 "SL.speedlm","SL.step","SL.step.forward","SL.step.interaction","SL.stepAIC","SL.svm","SL.template","SL.xgboost")
 
-      if (exists("SL.library")){
-        if (length(unlist(SL.library))>1) {
-          SL.library<-unlist(SL.library)[1]
+      if ("SL.library" %in% names(ps.control)){
+        if (length(unlist(ps.control$SL.library))>1) {
+          ps.control$SL.library<-unlist(ps.control$SL.library)[1]
           warning("only one method allowed in SL.library argument of SuperLearner in PSweight; the first element in SL.library is taken")
         }
-        if (!SL.library %in% SL.all) stop("SL.library argument unrecgonized; please use listWrappers() in SuperLearner to find the list of supported values")
+        if (!ps.control$SL.library %in% SL.all) {
+          stop("SL.library argument unrecgonized; please use listWrappers() in SuperLearner to find the list of supported values")
+        }
       }else{ #no SL.library specified
-        SL.library="SL.glm"
+        ps.control$SL.library="SL.glm"
       }
 
       covM<-model.matrix(ps.formula, data)
       #method is fixed to "method.NNLS"
-      fitsl <-SuperLearner::SuperLearner(Y=zvalue, X=data.frame(covM), newX = NULL, family = family, SL.library=SL.library,
-                                         method = "method.NNLS", id = NULL, verbose = FALSE, control = control, cvControl = cvControl,
-                                         obsWeights = obsWeights, env = env)
+      fitsl <- do.call(SuperLearner::SuperLearner,
+                       c(list(Y=zvalue, X=data.frame(covM), family = family, method = "method.NNLS"), ps.control))
 
       e.h<-cbind((1-fitsl$SL.predict),fitsl$SL.predict)
     }

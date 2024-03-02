@@ -41,7 +41,7 @@ binest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
   # obtain ps estimation
   # estimate with formula
   if(is.null(ps.estimate)){
-    fit<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data_p,ncate=2),ps.control=ps.control))
+    fit<-PSmethod(ps.formula = ps.formula, method=ps.method, data=data_p, ncate=2, ps.control=ps.control)
     W<- model.matrix(ps.formula,data_p)                      # design matrix
 
     e.h <- as.numeric(fit$e.h[,2])
@@ -84,10 +84,12 @@ binest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
       XY<-model.matrix(formula(out.formula),data=dataaug)
 
       #predict outcome
-      fitout0<-do.call(OUTmethod,c(list(out.formula=out.formula,y=y[z==0], out.method=out.method, family=family, datain=dataaug0, dataout=dataaug),out.control=out.control))
+      fitout0<-do.call(OUTmethod, list(out.formula=out.formula, y=y[z==0], out.method=out.method,
+                                       family=family, datain=dataaug0, dataout=dataaug, out.control=out.control))
       m0.h<-fitout0$m.est
       gamma0.h<-fitout0$gamma.h
-      fitout1<-do.call(OUTmethod,c(list(out.formula=out.formula,y=y[z==1], out.method=out.method, family=family, datain=dataaug1, dataout=dataaug),out.control=out.control))
+      fitout1<-do.call(OUTmethod, list(out.formula=out.formula, y=y[z==1], out.method=out.method,
+                                       family=family, datain=dataaug1, dataout=dataaug, out.control=out.control))
       m1.h<-fitout1$m.est
       gamma1.h<-fitout1$gamma.h
 
@@ -161,7 +163,7 @@ binest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
         y.b<-y[samp.b]
         z.b<-z[samp.b]
 
-        fit.b<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data.b,ncate=2),ps.control))
+        fit.b<-PSmethod(ps.formula = ps.formula, method=ps.method, data=data.b, ncate=2, ps.control=ps.control)
         e.b <- as.numeric(fit.b$e.h[,2])
 
         if(weight=="entropy"){
@@ -253,7 +255,7 @@ binest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
         data.b<-data_p[samp.b,]
         y.b<-y[samp.b]
         z.b<-z[samp.b]
-        fit.b<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data.b,ncate=2),ps.control))
+        fit.b<-PSmethod(ps.formula = ps.formula, method=ps.method, data=data.b, ncate=2, ps.control=ps.control)
         e.b <- as.numeric(fit.b$e.h[,2])
 
         if(weight=="entropy"){

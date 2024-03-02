@@ -42,8 +42,7 @@
 #' datain <- psdata[psdata$trt==1, ]
 #' outfit <- OUTmethod(out.formula = out.formula, y=y, datain = datain, dataout = psdata)
 #'
-OUTmethod<-function(out.formula=out.formula, y=y, out.method="glm", family='gaussian', datain=datain, dataout=dataout,...){
-
+OUTmethod<-function(out.formula=out.formula, y=y, out.method="glm", family='gaussian', datain=datain, dataout=dataout, out.control){
 
 ################################################################################################
   gamma.h<-NULL #only useful in glm
@@ -60,54 +59,59 @@ OUTmethod<-function(out.formula=out.formula, y=y, out.method="glm", family='gaus
     gamma.h<-as.numeric(coef(fitglm))
 
   }else if(out.method=='gbm'){
-    if (exists("distribution")){
-      if (!distribution %in% c("bernoulli","adaboost","gaussian","poisson")){
+    if ("distribution" %in% names(out.control)){
+      if (!out.control$distribution %in% c("bernoulli","adaboost","gaussian","poisson")){
         stop("only bernoulli, adaboost, gaussian, poisson, supported for augmentation")
       }
     }
 
-    if (exists("var.monotone")) var.monotone=var.monotone else var.monotone=NULL
-    if (exists("weights")) weights=weights else weights=NULL
-    if (exists("weights")) weights=weights else weights=NULL
-    if (exists("n.trees")) n.trees=n.trees else n.trees=100
-    if (exists("interaction.depth")) interaction.depth=interaction.depth else interaction.depth=1
-    if (exists("n.minobsinnode")) n.minobsinnode=n.minobsinnode else n.minobsinnode=10
-    if (exists("shrinkage")) shrinkage=shrinkage else shrinkage=0.1
-    if (exists("bag.fraction")) bag.fraction=bag.fraction else bag.fraction=0.5
-    if (exists("train.fraction")) train.fraction=train.fraction else train.fraction=1
-    if (exists("cv.folds")) cv.folds=cv.folds else cv.folds=0
-    if (exists("class.stratify.cv ")) class.stratify.cv =class.stratify.cv  else class.stratify.cv=NULL
-    if (exists("n.cores ")) n.cores =n.cores  else n.cores=NULL
-    if (exists("verbose")) warning("verbose argument set to F for SuperLearner in PSweight")
-
-    if(family=='gaussian'){
-      distribution<-"gaussian"
-    }else if(family=='binomial'){
-      if (!exists("distribution")){
-        distribution<-"bernoulli"
-      }
-    }else if(family=='poisson'){
-      distribution<-"poisson"
+    if ("formula" %in% names(out.control)) {
+      stop("the out formula should not be specified in 'out.control'; use argument 'out.formula'")
+    } else {
+      out.control$formula <- out.formula
     }
 
-    fitgbm <- gbm::gbm(formula = out.formula, data=datain,distribution=distribution, var.monotone=var.monotone, n.trees=n.trees,
-                     interaction.depth = interaction.depth, n.minobsinnode = n.minobsinnode, shrinkage = shrinkage, bag.fraction = bag.fraction,
-                     train.fraction = train.fraction, cv.folds = cv.folds, keep.data = T, verbose = F,
-                     class.stratify.cv = class.stratify.cv, n.cores = n.cores)
+    if (!("var.monotone" %in% names(out.control))) out.control$var.monotone=NULL
+    if (!("weights" %in% names(out.control))) out.control$weights=NULL
+    if (!("n.trees" %in% names(out.control))) out.control$n.trees=100
+    if (!("interaction.depth" %in% names(out.control))) out.control$interaction.depth=1
+    if (!("n.minobsinnode" %in% names(out.control))) out.control$n.minobsinnode=10
+    if (!("shrinkage" %in% names(out.control))) out.control$shrinkage=0.1
+    if (!("bag.fraction" %in% names(out.control))) out.control$bag.fraction=0.5
+    if (!("train.fraction" %in% names(out.control))) out.control$train.fraction=1
+    if (!("cv.folds" %in% names(out.control))) out.control$cv.folds=0
+    if (!("class.stratify.cv" %in% names(out.control))) out.control$class.stratify.cv=NULL
+    if (!("n.cores" %in% names(out.control))) out.control$n.cores=NULL
+    if ("verbose" %in% names(out.control)) warning("verbose argument set to F for gbm in PSweight")
+    out.control$verbose <- FALSE
+    
+    if(family=='gaussian'){
+      out.control$distribution <- "gaussian"
+    }else if(family=='binomial'){
+      if (!"distribution" %in% out.control){
+        out.control$distribution <- "bernoulli"
+      }
+    }else if(family=='poisson'){
+      out.control$distribution <- "poisson"
+    }
 
+    out.control$data <- datain
 
-    m.est<-predict(fitgbm,type = "response",newdata=dataout)
-
+    fitgbm <- do.call(gbm::gbm, out.control)
+    
+    m.est<-predict(fitgbm, type="response", newdata=dataout, n.trees=m$n.trees) # stop warning with 'n.trees'
   }else if(out.method=='SuperLearner'){
-
-
-    if (exists("newX")) warning("newX argument set to NULL for SuperLearner in PSweight; please use out.method argument")
-    if (exists("id")) warning("id argument set to NULL for SuperLearner in PSweight")
-    if (exists("verbose")) warning("verbose argument set to F for SuperLearner in PSweight")
-    if (exists("obsWeights")) obsWeights=obsWeights else obsWeights=NULL
-    if (exists("control")) control=control else control=list()
-    if (exists("cvControl")) cvControl=cvControl else cvControl=list()
-    if (exists("env")) env=env else env=parent.frame()
+      
+    if ("newX" %in% names(out.control)) warning("newX argument set to NULL for SuperLearner in PSweight; please use out.method argument")
+    out.control$newX <- NULL
+    if ("id" %in% names(out.control)) warning("id argument set to NULL for SuperLearner in PSweight")
+    out.control$id <- NULL
+    if ("verbose" %in% names(out.control)) warning("verbose argument set to F for SuperLearner in PSweight")
+    out.control$verbose <- FALSE
+    if (!("obsWeights" %in% names(out.control))) out.control$obsWeights<-NULL
+    if (!("control" %in% names(out.control))) out.control$control<-list()
+    if (!("cvControl" %in% names(out.control))) out.control$cvControl<-list()
+    if (!("env" %in% names(out.control))) out.control$env<-parent.frame()
 
     if(family=='poisson'){
       warning("poisson regression not supported in SuperLearner")
@@ -121,28 +125,26 @@ OUTmethod<-function(out.formula=out.formula, y=y, out.method="glm", family='gaus
               "SL.speedlm","SL.step","SL.step.forward","SL.step.interaction","SL.stepAIC","SL.svm","SL.template","SL.xgboost")
 
 
-      if (exists("SL.library")){
-        if (length(unlist(SL.library))>1) {
-          SL.library=unlist(SL.library)[1]
-          warning("only one out.method allowed in SL.library argument of SuperLearner in PSweight; the first element in SL.library is taken")
-        }else {
-          if (!SL.library %in% SL.all){
-            stop("SL.library argument unrecgonized; please use listWrappers() in SuperLearner to find the list of supported values")
-          }
-        }
-      }else{ #no SL.library specified
-        if(family=='binomial'){
-          SL.library="SL.glm"
-        }else{
-          SL.library="SL.lm"
-        }
+    if ("SL.library" %in% names(out.control)){
+      if (length(unlist(out.control$SL.library))>1) {
+        out.control$SL.library<-unlist(out.control$SL.library)[1]
+        warning("only one method allowed in SL.library argument of SuperLearner in PSweight; the first element in SL.library is taken")
       }
+      if (!out.control$SL.library %in% SL.all) {
+        stop("SL.library argument unrecgonized; please use listWrappers() in SuperLearner to find the list of supported values")
+      }
+    }else{ #no SL.library specified
+      if(family=='binomial'){
+        out.control$SL.library="SL.glm"
+      }else{
+        out.control$SL.library="SL.lm"
+      }
+    }
 
     covM<-model.matrix(out.formula, datain)
     #out.method is fixed to "method.NNLS"
-    fitSL <-SuperLearner::SuperLearner(Y=y, X=data.frame(covM), newX = NULL, family = family, SL.library=SL.library,
-                                     method = "method.NNLS", id = NULL, verbose = FALSE, control = control, cvControl = cvControl,
-                                     obsWeights = obsWeights, env = env)
+    fitSL <- do.call(SuperLearner::SuperLearner,
+                     c(list(Y=zvalue, X=data.frame(covM), family = family, method = "method.NNLS"), out.control=out.control))
 
     covout<-model.matrix(out.formula,dataout)
 

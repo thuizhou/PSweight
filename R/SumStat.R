@@ -166,14 +166,14 @@ SumStat<- function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,Z=NULL,covM=NULL
 
     #trim the data
     if(delta>0){
-      tmp<-do.call(PStrim,list(data=data,ps.formula = ps.formula, zname=zname,delta=delta,optimal=FALSE,method=method,ps.control=ps.control))
+      tmp<-do.call(PStrim,list(data=data, ps.formula=ps.formula, zname=zname, delta=delta, optimal=FALSE, method=method, ps.control=ps.control))
       data<-tmp[[1]]
       trim_sum<-tmp[[2]]
     }
 
 
     #fit propensity score model
-    e.h<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=method, data=data,ncate=ncate),ps.control))$e.h
+    e.h<-do.call(PSmethod,list(ps.formula=ps.formula, method=method, data=data, ncate=ncate, ps.control=ps.control))$e.h
 
     #post-trimming processing
     z<-as.numeric(data[,zname])
