@@ -11,7 +11,7 @@ OUTmethod(
   family = "gaussian",
   datain = datain,
   dataout = dataout,
-  ...
+  out.control = list()
 )
 }
 \arguments{
@@ -29,7 +29,7 @@ a symbolic description of the outcome model to be fitted.}
 
 \item{dataout}{The prediction data for the outcome model. In the context of \code{PSweight}, it refers to the full data.}
 
-\item{...}{further arguments passed to or from other methods.}
+\item{out.control}{a list to specify additional options when \code{out.method} is set to \code{"gbm"} or \code{"SuperLearner"}.}
 }
 \value{
 \describe{

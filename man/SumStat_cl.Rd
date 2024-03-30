@@ -29,13 +29,15 @@ Defaults to 1, corresponding to the Laplace approximation. Please refer to lme4 
 }
 \value{
 SumStat_cl returns a \code{SumStat} object including a list of the following value:
-treatment group, propensity scores, propensity score weights, effective sample sizes,
+treatment group, propensity scores, fitted propensity model, propensity score weights, effective sample sizes,
 and balance statistics. A summary of \code{SumStat} can be obtained with \code{\link{summary.SumStat}}.
 
 \describe{
 \item{\code{ trtgrp}}{a character indicating the treatment group.}
 
 \item{\code{ propensity}}{a data frame of estimated propensity scores.}
+
+\item{\code{ ps.fitObjects}}{the fitted propensity model details}
 
 \item{\code{ ps.weights}}{a data frame of propensity score weights.}
 
@@ -69,8 +71,8 @@ variable, \code{terms} is a series of terms
 which specifies a linear predictor for \code{treatment}, and \code{clusters} is the cluster indicator. The current version supports two-level models and the random-effects term is required to be the last piece in the formula. \code{ps.formula} specifies a mixed-effects logistic regression
 model for estimating propensity scores. The treatment group corresponds to the last group in the alphebatic order, unless otherwise specified by \code{trtgrp}.
 
-Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (\code{"IPW"}), ATT {(\code{"treated"})}, and
-ATO{(\code{"overlap"})}, ATM {\code{"matching"}} and ATEN \code{"entropy"}. These weights are members of a larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (\code{"IPW"}), ATT (\code{"treated"}), and
+ATO(\code{"overlap"}), ATM (\code{"matching"}) and ATEN (\code{"entropy"}). These weights are members of a larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
 When there is a practical violation of the positivity assumption, \code{delta} defines the symmetric
 propensity score trimming rule following Crump et al. (2009). With multiple treatments, \code{delta} defines the
 multinomial trimming rule introduced in Yoshida et al. (2019). The overlap weights can also be considered as

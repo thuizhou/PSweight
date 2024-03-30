@@ -9,7 +9,7 @@ PSmethod(
   method = "glm",
   data = data,
   ncate = ncate,
-  ...
+  ps.control = list()
 )
 }
 \arguments{
@@ -23,12 +23,14 @@ are given under "Details". This argument is optional if \code{ps.estimate} is no
 
 \item{ncate}{a numeric to specify the number of treatment groups present in the given data.}
 
-\item{...}{further arguments passed to or from other methods.}
+\item{ps.control}{a list to specify additional options when \code{method} is set to \code{"gbm"} or \code{"SuperLearner"}.}
 }
 \value{
 \describe{
 
 \item{\code{ e.h}}{a data frame of estimated propensity scores.}
+
+\item{\code{ ps.fitObjects}}{the fitted propensity model details}
 
 \item{\code{ beta.h}}{estimated coefficient of the propensity model when \code{method = "glm"}.}
 
