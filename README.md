@@ -3,6 +3,9 @@
 
 # PSweight
 
+
+# PSweight
+
 This `PSweight` Package is to perform propensity score weighting
 analysis for causal inference. Two main modules are included to assist
 the design and analysis of observational studies. In the design module,
@@ -30,6 +33,7 @@ score estimates and outcome predictions through `ps.estimate` and
 `out.estimate`, and provide a sandwich standard error that ignores the
 variability in estimating these nuisances.
 
+
 ## Installation
 
 You can install the released version of PSweight from
@@ -42,7 +46,33 @@ install.packages("PSweight")
 ## Update
 
 The version 1.1.7 includes module for cluster design. Please check out
-the help page for PSweight\_cl and SumStat\_cl.
+the help page for PSweight_cl and SumStat_cl.
+
+The version 1.2.0 of PSweight addresses several important bug fixes to
+enhance the functionality and user experience of our R package. Notable
+updates include:
+
+1.Enhanced Parameter Support: The “PSmethod” and “OUTmethod” functions
+have been updated to accurately incorporate parameters specified via
+“ps.control” and “out.control”.
+
+2.Propensity Score Model Output: Users can now access the fitted
+propensity score model directly from the “SumStat” function output,
+facilitating deeper analysis and diagnostics.
+
+3.Improved Handling of Single Covariate Models: The package now includes
+checks within “summary.SumStat()” and “plot.SumStat()” functions to
+ensure they operate correctly even when the propensity score model is
+based on a single covariate.
+
+4.Flexible Treatment Variable Naming: The “SumStat_cl()” function has
+been modified to replace the hardcoded ‘trt’ variable with a dynamic
+reference, “data\[\[zname\]\]”, allowing users to specify their
+treatment variable names.
+
+These updates aim to enhance the PSweight package’s functionality,
+usability, and analytical precision. Users are encouraged to explore the
+new features and provide feedback for continuous improvement.
 
 ## Downloads
 
