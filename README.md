@@ -41,10 +41,11 @@ You can install the released version of PSweight from
 install.packages("PSweight")
 ```
 
-## Update
+## Maintainer
 
-The version 1.1.7 includes module for cluster design. Please check out
-the help page for PSweight_cl and SumStat_cl.
+yukang.zeng@yale.edu
+
+## Update
 
 The version 1.2.0 of PSweight addresses several important bug fixes to
 enhance the functionality and user experience of our R package. Notable
@@ -71,6 +72,10 @@ treatment variable names.
 These updates aim to enhance the PSweight package’s functionality,
 usability, and analytical precision. Users are encouraged to explore the
 new features and provide feedback for continuous improvement.
+
+
+The version 1.1.7 includes module for cluster design. Please check out
+the help page for PSweight_cl and SumStat_cl.
 
 ## Downloads
 
