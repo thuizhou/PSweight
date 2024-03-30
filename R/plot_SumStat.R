@@ -61,6 +61,7 @@ plot.SumStat<-function(x, type="balance", weighted.var=TRUE, threshold=0.1, metr
       warning("Balance metric unrecognized, 'ASD' calculated instead.")
       metric="ASD"
     }
+
     wt_list<-c("unweighted",names(x$ps.weights)[-c(1,2)])
     p<-dim(x$unweighted.sumstat)[1]
     wt.type<-rep(wt_list,each=p)
@@ -68,22 +69,41 @@ plot.SumStat<-function(x, type="balance", weighted.var=TRUE, threshold=0.1, metr
 
     if(metric=="ASD"){
       ab.smd=c()
-      for (wt in wt_list){
-        wt_ex<-paste0(wt,".sumstat")
-        if (ncate>2){
-          if(weighted.var==TRUE){
-            ab.smd<-c(ab.smd,apply(abs(x[[wt_ex]][,(3*ncate+1):(3*ncate+choose(ncate,2))]),1,max))
-          } else{
-            ab.smd<-c(ab.smd,apply(abs(x[[wt_ex]][,(3*ncate+choose(ncate,2)+1):(3*ncate+2*choose(ncate,2))]),1,max))
+
+      for (wt in wt_list) {
+        wt_ex <- paste0(wt, ".sumstat")
+        if (ncate > 2) {
+          if (weighted.var == TRUE) {
+            if (nrow(x[[wt_ex]]) == 1) {
+              ab.smd <- c(ab.smd, max(abs(x[[wt_ex]][, (3 * ncate + 1):(3 * ncate + choose(ncate, 2))])))
+            } else {
+              ab.smd <- c(ab.smd, apply(abs(x[[wt_ex]][, (3 * ncate + 1):(3 * ncate + choose(ncate, 2))]), 1, max))
+            }
+          } else {
+            if (nrow(x[[wt_ex]]) == 1) {
+              ab.smd <- c(ab.smd, max(abs(x[[wt_ex]][, (3 * ncate + choose(ncate, 2) + 1):(3 * ncate + 2 * choose(ncate, 2))])))
+            } else {
+              ab.smd <- c(ab.smd, apply(abs(x[[wt_ex]][, (3 * ncate + choose(ncate, 2) + 1):(3 * ncate + 2 * choose(ncate, 2))]), 1, max))
+            }
           }
-        }else{
-          if(weighted.var==TRUE){
-            ab.smd<-c(ab.smd,abs(x[[wt_ex]][,(3*ncate+1):(3*ncate+choose(ncate,2))]))
-          } else{
-            ab.smd<-c(ab.smd,abs(x[[wt_ex]][,(3*ncate+choose(ncate,2)+1):(3*ncate+2*choose(ncate,2))]))
-          } 
+        } else {
+          if (weighted.var == TRUE) {
+            if (nrow(x[[wt_ex]]) == 1) {
+              ab.smd <- c(ab.smd, abs(x[[wt_ex]][, (3 * ncate + 1):(3 * ncate + choose(ncate, 2))]))
+            } else {
+              ab.smd <- c(ab.smd, abs(x[[wt_ex]][, (3 * ncate + 1):(3 * ncate + choose(ncate, 2))]))
+            }
+          } else {
+            if (nrow(x[[wt_ex]]) == 1) {
+              ab.smd <- c(ab.smd, abs(x[[wt_ex]][, (3 * ncate + choose(ncate, 2) + 1):(3 * ncate + 2 * choose(ncate, 2))]))
+            } else {
+              ab.smd <- c(ab.smd, abs(x[[wt_ex]][, (3 * ncate + choose(ncate, 2) + 1):(3 * ncate + 2 * choose(ncate, 2))]))
+            }
+          }
         }
       }
+
+
 
       plot.df<-data.frame(wt.type,var.name,ab.smd)
       xl = min(plot.df$ab.smd, 0)
@@ -106,14 +126,24 @@ plot.SumStat<-function(x, type="balance", weighted.var=TRUE, threshold=0.1, metr
       print(pt)
     }else if(metric=="PSD"){
       ab.smd=c()
-      for (wt in wt_list){
-        wt_ex<-paste0(wt,".sumstat")
-        if(weighted.var==TRUE){
-          ab.smd<-c(ab.smd,apply(abs(x[[wt_ex]][,(3*ncate+2*choose(ncate,2)+1):(4*ncate+2*choose(ncate,2))]),1,max))
-        }else{
-          ab.smd<-c(ab.smd,apply(abs(x[[wt_ex]][,(4*ncate+2*choose(ncate,2)+1):(5*ncate+2*choose(ncate,2))]),1,max))
+      for (wt in wt_list) {
+        wt_ex <- paste0(wt, ".sumstat")
+        if (weighted.var == TRUE) {
+          if (nrow(x[[wt_ex]]) == 1) {
+            ab.smd <- c(ab.smd, max(abs(x[[wt_ex]][, (3 * ncate + 2 * choose(ncate, 2) + 1):(4 * ncate + 2 * choose(ncate, 2))])))
+          } else {
+            ab.smd <- c(ab.smd, apply(abs(x[[wt_ex]][, (3 * ncate + 2 * choose(ncate, 2) + 1):(4 * ncate + 2 * choose(ncate, 2))]), 1, max))
+          }
+        } else {
+          if (nrow(x[[wt_ex]]) == 1) {
+            ab.smd <- c(ab.smd, max(abs(x[[wt_ex]][, (4 * ncate + 2 * choose(ncate, 2) + 1):(5 * ncate + 2 * choose(ncate, 2))])))
+          } else {
+            ab.smd <- c(ab.smd, apply(abs(x[[wt_ex]][, (4 * ncate + 2 * choose(ncate, 2) + 1):(5 * ncate + 2 * choose(ncate, 2))]), 1, max))
+          }
         }
       }
+
+
       #SMD forest plot
       plot.df<-data.frame(wt.type,var.name,ab.smd)
       xl = min(plot.df$ab.smd, 0)

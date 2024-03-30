@@ -15,8 +15,8 @@
 #' which specifies a linear predictor for \code{treatment}, and \code{clusters} is the cluster indicator. The current version supports two-level models and the random-effects term is required to be the last piece in the formula. \code{ps.formula} specifies a mixed-effects logistic regression
 #' model for estimating propensity scores. The treatment group corresponds to the last group in the alphebatic order, unless otherwise specified by \code{trtgrp}.
 #'
-#' Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (\code{"IPW"}), ATT {(\code{"treated"})}, and
-#' ATO{(\code{"overlap"})}, ATM {\code{"matching"}} and ATEN \code{"entropy"}. These weights are members of a larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+#' Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (\code{"IPW"}), ATT (\code{"treated"}), and
+#' ATO(\code{"overlap"}), ATM (\code{"matching"}) and ATEN (\code{"entropy"}). These weights are members of a larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
 #' When there is a practical violation of the positivity assumption, \code{delta} defines the symmetric
 #' propensity score trimming rule following Crump et al. (2009). With multiple treatments, \code{delta} defines the
 #' multinomial trimming rule introduced in Yoshida et al. (2019). The overlap weights can also be considered as
@@ -25,13 +25,15 @@
 #' Li and Li (2019). For details about matching weights and entropy weights, please refer to Li and Greene (2013) and Zhou, Matsouaka and Thomas (2020).
 #'
 #' @return SumStat_cl returns a \code{SumStat} object including a list of the following value:
-#' treatment group, propensity scores, propensity score weights, effective sample sizes,
+#' treatment group, propensity scores, fitted propensity model, propensity score weights, effective sample sizes,
 #' and balance statistics. A summary of \code{SumStat} can be obtained with \code{\link{summary.SumStat}}.
 #'
 #' \describe{
 #' \item{\code{ trtgrp}}{a character indicating the treatment group.}
 #'
 #' \item{\code{ propensity}}{a data frame of estimated propensity scores.}
+#' 
+#' \item{\code{ ps.fitObjects}}{the fitted propensity model details}
 #'
 #' \item{\code{ ps.weights}}{a data frame of propensity score weights.}
 #'
@@ -81,14 +83,14 @@
 #'
 #' @examples
 #'
-#' data("psdata_cl")
-#' # the propensity model
-#' # ps.formula<-trt~cov1+cov2+cov3+cov4+cov5+cov6+(1|clt)
-#'
-#' # using SumStat to estimate propensity scores
-#' # msstat <- SumStat_cl(ps.formula, trtgrp="1", data=psdata_cl,
-#' #   weight=c("IPW","overlap","treated","entropy","matching"))
-#' #summary(msstat)
+# data("psdata_cl")
+# # the propensity model
+# ps.formula<-trt~cov1+cov2+cov3+cov4+cov5+cov6+(1|clt)
+#
+# # using SumStat to estimate propensity scores
+# msstat <- SumStat_cl(ps.formula, trtgrp="1", data=psdata_cl,
+#   weight=c("IPW","overlap","treated","entropy","matching"))
+# summary(msstat)
 #'
 #' @import nnet SuperLearner gbm lme4
 #' @importFrom  stats binomial coef cov formula glm lm model.matrix plogis poisson predict qnorm quantile sd
@@ -167,7 +169,7 @@ SumStat_cl<- function(ps.formula=NULL,trtgrp=NULL,data=NULL,weight="overlap",del
 
     #dimension of data
     n<-dim(data)[1]
-    ncate<-length(unique(data$trt))
+    ncate<-length(unique(data[[zname]]))
 
     #correspondence btw Z and zindex
     dic<-rep(NA,ncate)
@@ -340,7 +342,7 @@ SumStat_cl<- function(ps.formula=NULL,trtgrp=NULL,data=NULL,weight="overlap",del
 
   #output
   if (is.null(trtgrp)) trtgrp=dic[ncate]
-  output<-list(trtgrp=trtgrp, propensity=e.h, ps.weights=ps.weights, ess=eff.sample.size, unweighted.sumstat=unweighted)
+  output<-list(trtgrp=trtgrp, propensity=e.h, ps.fitObjects = fit.e ,ps.weights=ps.weights, ess=eff.sample.size, unweighted.sumstat=unweighted)
 
   for (i in 1:(length(weight))){
     output[[paste0(weight[i],".sumstat")]]<-get(weight[i])

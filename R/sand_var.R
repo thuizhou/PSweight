@@ -174,7 +174,7 @@ sand_bin<-function(z,y,n,ftilt,thetaest,W=NULL,XY=NULL,eest,m0est,m1est,family="
   }
 
   Atheta<-jacobian(mphi,thetaest)
-  invAtheta <- solve(Atheta)
+  invAtheta <- MASS::ginv(Atheta)
 
   #calculate the sandwich variance
   Vtmp<-invAtheta%*%Omega(thetaest)%*%t(invAtheta)/n
@@ -429,7 +429,7 @@ sand_mul<-function(z,y,n,ncate,ftilt,thetaest,W=NULL,XY=NULL,eest,mest,family="g
   }
 
   Atheta<-jacobian(mphi,thetaest)
-  invAtheta <- solve(Atheta)
+  invAtheta <- MASS::ginv(Atheta)
 
   #calculate the sandwich variance
   Vtmp<-invAtheta%*%Omega(thetaest)%*%t(invAtheta)/n

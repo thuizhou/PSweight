@@ -78,26 +78,47 @@ summary.SumStat<-function(object,weighted.var=TRUE,metric="ASD",...){
     metric="ASD"
   }
 
-  output<-function(target){
-    if (metric=="ASD"){
-        if (weighted.var==TRUE)
-        { vm<-target[,(ncate*1+1):(ncate*2)]
-          SMD<-apply(abs(target[,(ncate*3+1):(ncate*4)]),1,max)
-        }else{
-          vm<-target[,(ncate*2+1):(ncate*3)]
-          SMD<-apply(abs(target[,(ncate*4+1):(ncate*5)]),1,max)
+
+  output <- function(target) {
+    ncol_target <- ncol(target)
+
+    if (metric == "ASD") {
+      if (weighted.var == TRUE) {
+        vm <- target[, (ncate * 1 + 1):(ncate * 2)]
+        if (ncol_target >= (3 * ncate + 1)) {
+          SMD <- abs(target[, 3 * ncate + 1])
+        } else {
+          SMD <- abs(target[, ncol_target])
         }
-    } else{
-        if (weighted.var==TRUE)
-        { vm<-target[,(ncate*1+1):(ncate*2)]
-          SMD<-apply(abs(target[,(ncate*5+1):(ncate*6)]),1,max)
-        }else{
-          vm<-target[,(ncate*2+1):(ncate*3)]
-          SMD<-apply(abs(target[,(ncate*6+1):(ncate*7)]),1,max)
+      } else {
+        vm <- target[, (ncate * 2 + 1):(ncate * 3)]
+        if (ncol_target >= (3 * ncate + 2)) {
+          SMD <- abs(target[, 3 * ncate + 2])
+        } else {
+          SMD <- abs(target[, ncol_target])
         }
+      }
+    } else {
+      if (weighted.var == TRUE) {
+        vm <- target[, (ncate * 1 + 1):(ncate * 2)]
+        if (ncol_target >= (4 * ncate + 1)) {
+          SMD <- abs(target[, 4 * ncate + 1])
+        } else {
+          SMD <- abs(target[, ncol_target])
+        }
+      } else {
+        vm <- target[, (ncate * 2 + 1):(ncate * 3)]
+        if (ncol_target >= (4 * ncate + 2)) {
+          SMD <- abs(target[, 4 * ncate + 2])
+        } else {
+          SMD <- abs(target[, ncol_target])
+        }
+      }
     }
-    return(cbind(target[,(ncate*0+1):(ncate*2)],SMD))
+
+    return(cbind(target[, (ncate * 0 + 1):(ncate * 2)], SMD))
   }
+
 
   output_sumsumstat<-list(effective.sample.size=object$ess,unweighted=output(object$unweighted.sumstat))
 

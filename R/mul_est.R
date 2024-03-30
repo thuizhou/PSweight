@@ -42,7 +42,7 @@ mulest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
   # obtain ps estimation
   # estimate with formula
   if(is.null(ps.estimate)){
-    fit<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data_p,ncate=ncate),ps.control=ps.control))
+    fit<-do.call(PSmethod, list(ps.formula=ps.formula, method=ps.method, data=data_p, ncate=ncate, ps.control=ps.control))
     W<- model.matrix(formula(ps.formula),data_p)                      # design matrix
     e.h <- fit$e.h
     beta.h<-as.numeric(fit$beta.h)
@@ -79,7 +79,7 @@ mulest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
       m.h<-c()
       for(i in 1:ncate){
         dataaugtmp<-dataaug[z==i,]
-        outcomefittmp<-do.call(OUTmethod,c(list(out.formula=out.formula,y=y[z==i], out.method=out.method, family=family, datain=dataaug[z==i,], dataout=dataaug),out.control=out.control))
+        outcomefittmp<-do.call(OUTmethod,list(out.formula=out.formula,y=y[z==i], out.method=out.method, family=family, datain=dataaug[z==i,], dataout=dataaug,out.control=out.control))
         gamma.tmp<-outcomefittmp$gamma.h
         gamma.h<-c(gamma.h,gamma.tmp)
         #predict using outcome regression for two treatent groups
@@ -242,7 +242,7 @@ mulest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
         dataaug.b<-dataaug[samp.b,]
         y.b<-y[samp.b]
         z.b<-z[samp.b]
-        fit.b<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=ps.method, data=data.b,ncate=ncate),ps.control))
+        fit.b<-do.call(PSmethod,list(ps.formula = ps.formula, method=ps.method, data=data.b,ncate=ncate,ps.control=ps.control))
         e.b <- fit.b$e.h
 
         m.b<-NULL
@@ -250,7 +250,7 @@ mulest<-function(ps.formula=NULL,ps.estimate=NULL,zname=NULL,yname,data,trtgrp=N
           dataaug.tmp<-dataaug.b[z.b==i,]
 
           dataaugtmp<-dataaug[z==i,]
-          outcomefit.b<-do.call(OUTmethod,c(list(out.formula=out.formula,y=y.b[z.b==i], out.method=out.method, family=family, datain=dataaug.tmp, dataout=dataaug.b),out.control=out.control))
+          outcomefit.b<-do.call(OUTmethod,list(out.formula=out.formula,y=y.b[z.b==i], out.method=out.method, family=family, datain=dataaug.tmp, dataout=dataaug.b,out.control=out.control))
           #predict using outcome regression for two treatent groups
           m.b<-cbind(m.b,outcomefit.b$m.est)
         }

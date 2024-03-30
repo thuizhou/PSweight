@@ -38,8 +38,8 @@
 #' same information. When both are specified, the function will prioritize inputs from \code{Z} and \code{covM}.
 #' When \code{ps.estimate} is not \code{NULL}, argument \code{zname}.
 #'
-#' Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (\code{"IPW"}), ATT {(\code{"treated"})}, and
-#' ATO{(\code{"overlap"})}, ATM {\code{"matching"}} and ATEN \code{"entropy"}. These weights are members of a larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
+#' Current version of \code{PSweight} allows for five types of propensity score weights used to estimate ATE (\code{"IPW"}), ATT (\code{"treated"}), and
+#' ATO(\code{"overlap"}), ATM (\code{"matching"}) and ATEN (\code{"entropy"}). These weights are members of a larger class of balancing weights defined in Li, Morgan, and Zaslavsky (2018).
 #' When there is a practical violation of the positivity assumption, \code{delta} defines the symmetric
 #' propensity score trimming rule following Crump et al. (2009). With multiple treatments, \code{delta} defines the
 #' multinomial trimming rule introduced in Yoshida et al. (2019). The overlap weights can also be considered as
@@ -56,13 +56,15 @@
 #' Prediction algorithm and other tuning parameters can also be passed through \code{ps.control=list()} to \code{SumStat()}. Please refer to the user manual of the \code{SuperLearner} package for all the allowed specifications.
 #'
 #' @return SumStat returns a \code{SumStat} object including a list of the following value:
-#' treatment group, propensity scores, propensity score weights, effective sample sizes,
+#' treatment group, propensity scores, fitted propensity model, propensity score weights, effective sample sizes,
 #' and balance statistics. A summary of \code{SumStat} can be obtained with \code{\link{summary.SumStat}}.
 #'
 #' \describe{
 #' \item{\code{ trtgrp}}{a character indicating the treatment group.}
 #'
 #' \item{\code{ propensity}}{a data frame of estimated propensity scores.}
+#' 
+#' \item{\code{ ps.fitObjects}}{the fitted propensity model details}
 #'
 #' \item{\code{ ps.weights}}{a data frame of propensity score weights.}
 #'
@@ -173,14 +175,18 @@ SumStat<- function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,Z=NULL,covM=NULL
 
 
     #fit propensity score model
-    e.h<-do.call(PSmethod,c(list(ps.formula = ps.formula, method=method, data=data,ncate=ncate),ps.control))$e.h
+    psmodel<-do.call(PSmethod,list(ps.formula = ps.formula, method=method, data=data,ncate=ncate,ps.control = ps.control))
+    e.h<-psmodel$e.h
+    ps.fitObjects<-psmodel$fitObjects
 
     #post-trimming processing
     z<-as.numeric(data[,zname])
     n<-length(z) #total obs
     data["zindex"]<-z
 
-  }else{ #user supplied weights
+  }else{
+    #user supplied weights
+    ps.fitObjects <- NULL
     #print message if more than nesscary info supplied
     if ((!is.null(Z))&&(!is.null(zname))==T) warning("both Z and zname supplied, zname ignored")
     if ((!is.null(xname))&&(!is.null(covM))==T) warning("both covM and xname supplied, xname ignored")
@@ -515,7 +521,7 @@ SumStat<- function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,Z=NULL,covM=NULL
 
   #output
   if (is.null(trtgrp)) trtgrp=dic[ncate]
-  output<-list(trtgrp=trtgrp, propensity=e.h, ps.weights=ps.weights, ess=eff.sample.size, unweighted.sumstat=unweighted)
+  output<-list(trtgrp=trtgrp, propensity=e.h, ps.fitObjects = ps.fitObjects, ps.weights=ps.weights, ess=eff.sample.size, unweighted.sumstat=unweighted)
 
   for (i in 1:(length(weight))){
     output[[paste0(weight[i],".sumstat")]]<-get(weight[i])

@@ -217,5 +217,3 @@ PSweight<-function(ps.formula=NULL,ps.estimate=NULL,trtgrp=NULL,zname=NULL,yname
     do.call(mulest,list(ps.formula=ps.formula,ps.estimate=ps.estimate,zname=zname,yname=yname,data=data,trtgrp=trtgrp,augmentation=augmentation,bootstrap=bootstrap,R=R,out.formula=out.formula,out.estimate=out.estimate,family=family,weight=weight,ps.method=ps.method,ps.control=ps.control,out.method=out.method,out.control=out.control))
   }
 }
-
-
